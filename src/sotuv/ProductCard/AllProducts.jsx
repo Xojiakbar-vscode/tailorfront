@@ -194,7 +194,7 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
               <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-500 transition-colors" />
               <input
                 type="text"
-                placeholder="Nima qidiramiz? (kostyum, ko'ylak...)"
+                placeholder="Nima qidiramiz? (ip, tugma...)"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-12 py-3.5 bg-gray-100/50 border-transparent border focus:bg-white focus:border-red-200 focus:ring-4 focus:ring-red-500/5 rounded-2xl transition-all outline-none text-sm font-medium"
