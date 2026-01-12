@@ -124,8 +124,8 @@ const App = () => {
         </div>
       }>
         <Routes>
-          <Route path="/" element={<SotuvHome addToCart={addToCart} favorites={favorites} toggleFavorite={toggleFavorite} />} />
-          <Route path="/yana" element={<Home addToCart={addToCart} favorites={favorites} toggleFavorite={toggleFavorite} />} />
+          <Route path="/" element={<SotuvHome addToCart={addToCart} cartItems={cartItems} favorites={favorites} toggleFavorite={toggleFavorite} />} />
+          <Route path="/yana" element={<Home addToCart={addToCart}  favorites={favorites} toggleFavorite={toggleFavorite} />} />
           <Route path="/search" element={<SearchPage favorites={favorites} toggleFavorite={toggleFavorite} addToCart={addToCart} />} />
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/cart" element={<Cart cartItems={cartItems} setCartItems={setCartItems} />} />
