@@ -8,6 +8,7 @@ import FooterNavbar from "./sotuv/FooterNavbar/FooterNavbar";
 import AllProducts from "./sotuv/ProductCard/AllProducts"
 // TOAST IMPORT
 import { Toaster, toast } from "react-hot-toast";
+import Header from "./sotuv/Header/Header";
 
 // Lazy imports
 const Home = lazy(() => import("./components/Home/Home"));
@@ -123,7 +124,13 @@ const App = () => {
           </div>
         </div>
       }>
+              <Header
+              cartItems={cartItems}
+                favorites={favorites}
+        
+              />
         <Routes>
+
           <Route path="/" element={<SotuvHome addToCart={addToCart} cartItems={cartItems} favorites={favorites} toggleFavorite={toggleFavorite} />} />
           <Route path="/yana" element={<Home addToCart={addToCart}  favorites={favorites} toggleFavorite={toggleFavorite} />} />
           <Route path="/search" element={<SearchPage favorites={favorites} toggleFavorite={toggleFavorite} addToCart={addToCart} />} />
