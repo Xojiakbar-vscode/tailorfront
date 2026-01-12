@@ -521,7 +521,7 @@ const Cart = ({ cartItems, setCartItems }) => {
               </div>
 
               {/* Promokod qismi */}
-              <div className="mt-6 sm:mt-8 bg-gradient-to-r from-red-50 to-pink-50 p-4 sm:p-6 rounded-xl sm:rounded-2xl mx-2 sm:mx-0">
+              {/* <div className="mt-6 sm:mt-8 bg-gradient-to-r from-red-50 to-pink-50 p-4 sm:p-6 rounded-xl sm:rounded-2xl mx-2 sm:mx-0">
                 <h3 className="font-bold text-gray-700 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
                   <FaTicketAlt className="text-red-500" />
                   Promokodingiz bormi?
@@ -550,7 +550,7 @@ const Cart = ({ cartItems, setCartItems }) => {
                     ✓ {discountInfo.name} promokodi qo'llandi!
                   </p>
                 )}
-              </div>
+              </div> */}
             </div>
 
             {/* Xulosa paneli */}

@@ -5,7 +5,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import FooterNavbar from "./sotuv/FooterNavbar/FooterNavbar";
-
+import AllProducts from "./sotuv/ProductCard/AllProducts"
 // TOAST IMPORT
 import { Toaster, toast } from "react-hot-toast";
 
@@ -131,12 +131,17 @@ const App = () => {
           <Route path="/cart" element={<Cart cartItems={cartItems} setCartItems={setCartItems} />} />
           <Route path="/favorites" element={<Favorites favorites={favorites} toggleFavorite={toggleFavorite} addToCart={addToCart} />} />
           <Route path="/product/:id" element={<ProductDetail addToCart={addToCart} toggleFavorite={toggleFavorite} favorites={favorites} />} />
+          <Route path="/full" element={<AllProducts
+            addToCart={addToCart}
+            favorites={favorites}
+            toggleFavorite={toggleFavorite}
+          />} />
           <Route
             path="/category/:id"
             element={<CategoryDetail addToCart={addToCart} favorites={favorites} toggleFavorite={toggleFavorite} />}
           />
         </Routes>
-        <FooterNavbar cartItems={cartItems} favorites={favorites} />
+        <FooterNavbar cartItems={cartItems} favorites={favorites} className="navbarfooter" />
       </Suspense>
     </Router>
   );

@@ -189,7 +189,7 @@ const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
       </div>
 
       <div className="mt-20 flex flex-col items-center">
-        <Link to="/yana" className="group">
+        <Link to="/" className="group">
           <Player autoplay loop src={dropDown} className="w-32 sm:w-44 transition-transform group-hover:scale-110" />
           <p className="text-center text-red-400 font-black uppercase tracking-widest text-xs -mt-5">Barchasini ko'rish</p>
         </Link>
