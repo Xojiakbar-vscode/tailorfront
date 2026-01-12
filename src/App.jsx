@@ -131,7 +131,7 @@ const App = () => {
           <Route path="/cart" element={<Cart cartItems={cartItems} setCartItems={setCartItems} />} />
           <Route path="/favorites" element={<Favorites favorites={favorites} toggleFavorite={toggleFavorite} addToCart={addToCart} />} />
           <Route path="/product/:id" element={<ProductDetail addToCart={addToCart} toggleFavorite={toggleFavorite} favorites={favorites} />} />
-          <Route path="/full" element={<AllProducts
+          <Route path="/all-products" element={<AllProducts
             addToCart={addToCart}
             favorites={favorites}
             toggleFavorite={toggleFavorite}
