@@ -5,7 +5,7 @@ import { FaCheckCircle, FaUser, FaShoppingCart, FaTruck, FaPhoneAlt, FaTicketAlt
 
 // --- KONSTANTALAR ---
 const BOT_TOKEN = '8158426663:AAFumz1P2o3WtWH1NQme5pGI1sMl9SiN6bw';
-const CHAT_ID = '353486841';
+const CHAT_ID = '5696719336';
 const API_URL = "https://tailorback2025-production.up.railway.app/api/orders";
 const DISCOUNT_API_URL = "https://tailorback2025-production.up.railway.app/api/discounts";
 
