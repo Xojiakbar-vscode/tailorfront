@@ -520,37 +520,7 @@ const Cart = ({ cartItems, setCartItems }) => {
                 ))}
               </div>
 
-              {/* Promokod qismi */}
-              {/* <div className="mt-6 sm:mt-8 bg-gradient-to-r from-red-50 to-pink-50 p-4 sm:p-6 rounded-xl sm:rounded-2xl mx-2 sm:mx-0">
-                <h3 className="font-bold text-gray-700 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-                  <FaTicketAlt className="text-red-500" />
-                  Promokodingiz bormi?
-                </h3>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input 
-                    type="text"
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                    placeholder="Promokodni kiriting"
-                    className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:border-red-500 focus:ring-2 focus:ring-red-200 outline-none"
-                  />
-                  <button 
-                    onClick={applyPromoCode}
-                    disabled={isPromoLoading}
-                    className="px-4 sm:px-6 py-2.5 sm:py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-                  >
-                    {isPromoLoading ? "Tekshirilmoqda..." : "Qo'llash"}
-                  </button>
-                </div>
-                {promoError && (
-                  <p className="text-red-500 text-xs sm:text-sm mt-2">{promoError}</p>
-                )}
-                {discountInfo && (
-                  <p className="text-green-600 font-medium mt-2 text-sm sm:text-base">
-                    ✓ {discountInfo.name} promokodi qo'llandi!
-                  </p>
-                )}
-              </div> */}
+
             </div>
 
             {/* Xulosa paneli */}
