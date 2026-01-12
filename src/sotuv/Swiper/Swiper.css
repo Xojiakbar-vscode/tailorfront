@@ -1,0 +1,31 @@
+/* Swiper next/prev tugmalarini kichraytirish */
+.swiper-button-next,
+.swiper-button-prev {
+  color: white !important; /* Ikon rang */
+  background: rgba(0, 0, 0, 0.5); /* Orqa fon */
+  width: 35px !important; /* Kichikroq o'lcham */
+  height: 35px !important;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Hover effekti */
+.swiper-button-next:hover,
+.swiper-button-prev:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* Icon o'lchami */
+.swiper-button-next::after,
+.swiper-button-prev::after {
+  font-size: 16px !important; /* Default juda katta bo'ladi */
+}
+@media (max-width: 480px) {
+  .swiper-button-next,
+.swiper-button-prev{
+  opacity: 0 !important;
+}
+  
+}
