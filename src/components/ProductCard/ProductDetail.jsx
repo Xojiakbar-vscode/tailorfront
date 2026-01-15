@@ -172,7 +172,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
     }
   }
 
-  const imageUrls = product.images?.map(img => img.image_url) || ["https://via.placeholder.com/800"];
+  const imageUrls = product.images?.map(img => img.image_url) || ["https://media.licdn.com/dms/image/v2/D5612AQE8NiooxTxA3w/article-cover_image-shrink_720_1280/article-cover_image-shrink_720_1280/0/1695825196046?e=2147483647&v=beta&t=2zU71mKLxGihkNQB5eMDjCgbD7srasN1gyEqowXMGV4"];
 
 
   return (
@@ -487,7 +487,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                   <div key={item.id} className="group bg-white rounded-[2rem] p-3 border border-slate-100 hover:shadow-2xl transition-all duration-500 relative">
                     <Link to={`/product/${item.id}`}>
                       <div className="aspect-square rounded-[1.5rem] overflow-hidden mb-5 bg-slate-50 relative">
-                        <img src={item.images?.[0]?.image_url || "https://via.placeholder.com/300"} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                        <img src={item.images?.[0]?.image_url || "https://media.licdn.com/dms/image/v2/D5612AQE8NiooxTxA3w/article-cover_image-shrink_720_1280/article-cover_image-shrink_720_1280/0/1695825196046?e=2147483647&v=beta&t=2zU71mKLxGihkNQB5eMDjCgbD7srasN1gyEqowXMGV4"} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                         {itemDiscountValid && (
                           <div className="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-bold px-2 py-1 rounded-lg">SALE</div>
                         )}
