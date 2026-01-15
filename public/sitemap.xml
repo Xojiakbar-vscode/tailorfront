@@ -3,7 +3,7 @@
 
   <!-- ================= HOME ================= -->
   <url>
-    <loc>https://tailorshop.uz/</loc>
+    <loc>https://www.tailorshop.uz/</loc>
     <lastmod>2026-01-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -11,38 +11,38 @@
 
   <!-- ================= STATIK SAHIFALAR ================= -->
   <url>
-    <loc>https://tailorshop.uz/yana</loc>
+    <loc>https://www.tailorshop.uz/yana</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://tailorshop.uz/catalog</loc>
+    <loc>https://www.tailorshop.uz/catalog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://tailorshop.uz/all-products</loc>
+    <loc>https://www.tailorshop.uz/all-products</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://tailorshop.uz/search</loc>
+    <loc>https://www.tailorshop.uz/search</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- ================= CATEGORIES ================= -->
   <url>
-    <loc>https://tailorshop.uz/category/1</loc>
+    <loc>https://www.tailorshop.uz/category/1</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://tailorshop.uz/category/2</loc>
+    <loc>https://www.tailorshop.uz/category/2</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -50,56 +50,56 @@
   <!-- ================= PRODUCTS (API DAN) ================= -->
 
   <url>
-    <loc>https://tailorshop.uz/product/1</loc>
+    <loc>https://www.tailorshop.uz/product/1</loc>
     <lastmod>2026-01-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://tailorshop.uz/product/2</loc>
+    <loc>https://www.tailorshop.uz/product/2</loc>
     <lastmod>2026-01-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://tailorshop.uz/product/3</loc>
+    <loc>https://www.tailorshop.uz/product/3</loc>
     <lastmod>2026-01-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://tailorshop.uz/product/4</loc>
+    <loc>https://www.tailorshop.uz/product/4</loc>
     <lastmod>2026-01-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://tailorshop.uz/product/5</loc>
+    <loc>https://www.tailorshop.uz/product/5</loc>
     <lastmod>2026-01-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://tailorshop.uz/product/6</loc>
+    <loc>https://www.tailorshop.uz/product/6</loc>
     <lastmod>2026-01-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://tailorshop.uz/product/7</loc>
+    <loc>https://www.tailorshop.uz/product/7</loc>
     <lastmod>2026-01-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
-    <loc>https://tailorshop.uz/product/8</loc>
+    <loc>https://www.tailorshop.uz/product/8</loc>
     <lastmod>2026-01-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
