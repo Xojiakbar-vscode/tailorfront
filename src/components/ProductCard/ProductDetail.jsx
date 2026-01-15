@@ -29,7 +29,7 @@ const DetailSwiper = ({ images }) => {
   return (
     <div className="relative w-full h-full group overflow-hidden bg-gray-50 rounded-[2.5rem]">
       <div
-        className="flex h-full transition-transform duration-1000 ease-in-out"
+        className="flex h-full rounded-xl transition-transform duration-1000 ease-in-out"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
         {images.map((img, idx) => (
@@ -37,7 +37,7 @@ const DetailSwiper = ({ images }) => {
             key={idx}
             src={img}
             alt="Mahsulot"
-            className="w-full h-full object-contain md:object-cover flex-shrink-0"
+            className="w-full h-full rounded-xl object-cover md:object-cover flex-shrink-0"
           />
         ))}
       </div>
