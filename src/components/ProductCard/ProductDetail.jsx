@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { useParams, Link } from "react-router-dom";
 import {
   FaStar,
@@ -15,7 +16,7 @@ import { FaCartShopping } from "react-icons/fa6";
 import { AiOutlinePlus, AiOutlineMinus } from "react-icons/ai";
 
 // 1. Premium Swiper Komponenti
-const DetailSwiper = ({ images }) => {
+const DetailSwiper = ({ images, productName }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -36,7 +37,7 @@ const DetailSwiper = ({ images }) => {
           <img
             key={idx}
             src={img}
-            alt="Mahsulot"
+            alt={`${productName} – TailorShop.uz furnitura mahsuloti`}
             className="w-full h-full rounded-xl object-cover md:object-cover flex-shrink-0"
           />
         ))}
@@ -173,7 +174,66 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
 
   const imageUrls = product.images?.map(img => img.image_url) || ["https://via.placeholder.com/800"];
 
+
   return (
+  
+  <>
+    <Helmet>
+      <title>{product.name} | TailorShop.uz</title>
+
+      <meta
+        name="description"
+        content={`${product.name} – Namangandagi furnitura do‘koni TailorShop.uz. ${
+          product.description
+            ? product.description.substring(0, 140)
+            : "Ip, tugma, zamok va boshqa tikuvchilik mahsulotlari. Ulgurji va chakana."
+        }`}
+      />
+
+      <link
+        rel="canonical"
+        href={`https://www.tailorshop.uz/product/${product.id}`}
+      />
+
+      {/* Open Graph */}
+      <meta property="og:title" content={`${product.name} | TailorShop.uz`} />
+      <meta
+        property="og:description"
+        content={product.description || "Namangandagi furnitura do‘koni TailorShop.uz"}
+      />
+      <meta property="og:type" content="product" />
+      <meta
+        property="og:url"
+        content={`https://www.tailorshop.uz/product/${product.id}`}
+      />
+      <meta property="og:image" content={imageUrls[0]} />
+
+      {/* Product Schema */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "name": product.name,
+          "image": imageUrls,
+          "description": product.description,
+          "sku": product.id,
+          "brand": {
+            "@type": "Brand",
+            "name": "TailorShop.uz"
+          },
+          "offers": {
+            "@type": "Offer",
+            "url": `https://www.tailorshop.uz/product/${product.id}`,
+            "priceCurrency": "UZS",
+            "price": Math.round(finalPrice),
+            "availability": "https://schema.org/InStock"
+          }
+        })}
+      </script>
+    </Helmet>
+
+
+
     <div className="bg-[#fcfcfc] min-h-screen pb-20">
       <div className="max-w-7xl mx-auto px-4 pt-8">
         {/* Yuqori qism: Rasm va Asosiy ma'lumotlar */}
@@ -182,7 +242,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
           {/* Chap: Galereya */}
           <div className="lg:col-span-7">
             <div className="sticky top-24 aspect-[4/5] md:aspect-square rounded-[2.5rem] relative group shadow-2xl shadow-slate-200">
-              <DetailSwiper images={imageUrls} />
+              <DetailSwiper images={imageUrls} productName={product.name} />
               
               {/* Sevimli (Like) Tugmasi */}
               <button 
@@ -459,6 +519,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

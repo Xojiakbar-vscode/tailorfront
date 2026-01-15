@@ -1,23 +1,51 @@
-import React from 'react'
-import Swiper from '../Swiper/Swiper';
-import Filters from '../Filters/Filters';
-import Products from '../ProductCard/ProductCard'; // Komponent nomi Products bo'lsa
-import AdBanner from '../AdBanner/AdBanner';
+import React from "react";
+import { Helmet } from "react-helmet-async";
 
-const SotuvHome = ({ addToCart, cartItems, favorites, toggleFavorite }) => {
+import Swiper from "../Swiper/Swiper";
+import Filters from "../Filters/Filters";
+import Products from "../ProductCard/ProductCard";
+import AdBanner from "../AdBanner/AdBanner";
+
+const SotuvHome = ({ addToCart, favorites, toggleFavorite }) => {
   return (
-    <div className="pb-5"> {/* FooterNavbar ostida qolib ketmasligi uchun */}
+    <>
+      {/* SEO */}
+      <Helmet>
+        <title>
+          TailorShop.uz – Furnitura Do‘koni | Tikuvchilar uchun mahsulotlar
+        </title>
 
-      <Swiper />
-      <Filters />
-      <Products 
-        addToCart={addToCart}
-        favorites={favorites}
-        toggleFavorite={toggleFavorite} 
-      />
-      <AdBanner />
-    </div>
-  )
-}
+        <meta
+          name="description"
+          content="Tikuvchilar uchun ip, tugma, zamok, rezina va boshqa furnitura mahsulotlari. TailorShop.uz"
+        />
 
-export default SotuvHome
+        <link rel="canonical" href="https://www.tailorshop.uz/" />
+
+        <meta property="og:title" content="TailorShop.uz – Furnitura Do‘koni" />
+        <meta
+          property="og:description"
+          content="Tikuvchilar uchun furnitura mahsulotlari"
+        />
+        <meta
+          property="og:image"
+          content="https://www.tailorshop.uz/Logo.png"
+        />
+      </Helmet>
+
+      {/* UI */}
+      <div className="pb-5">
+        <Swiper />
+        <Filters />
+        <Products
+          addToCart={addToCart}
+          favorites={favorites}
+          toggleFavorite={toggleFavorite}
+        />
+        <AdBanner />
+      </div>
+    </>
+  );
+};
+
+export default SotuvHome;

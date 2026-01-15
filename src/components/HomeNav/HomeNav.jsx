@@ -36,8 +36,9 @@ const HomeNav = () => {
         <div className="flex-1 flex items-end justify-center" data-aos="fade-down" data-aos-delay="200">
           <img 
             src={logoImg} 
-            alt="Tailor Shop Logo" 
-            loading="lazy"
+           alt="TailorShop.uz — Namangandagi furnitura do‘koni logotipi"
+
+            loading="eager"
             className="h-48 md:h-56 lg:h-64 xl:h-72 mx-auto transform hover:scale-105 transition-transform duration-500" 
           />
         </div>

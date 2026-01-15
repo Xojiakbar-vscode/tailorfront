@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
+
 import { 
   FaArrowLeft, FaBoxes, FaLayerGroup, 
   FaShoppingCart, FaHeart, FaRegHeart 
@@ -41,6 +43,50 @@ const CategoryDetail = ({ addToCart, favorites, toggleFavorite }) => {
   }
 
   return (
+      <>
+    <Helmet>
+      <title>
+        {category?.name} | TailorShop.uz – Furnitura Katalogi
+      </title>
+
+      <meta
+        name="description"
+        content={`${category?.name} furnitura mahsulotlari. TailorShop.uz Namanganda joylashgan tikuvchilik do‘koni. Ulgurji va chakana savdo.`}
+      />
+
+      <link
+        rel="canonical"
+        href={`https://www.tailorshop.uz/category/${id}`}
+      />
+
+      {/* Open Graph */}
+      <meta
+        property="og:title"
+        content={`${category?.name} | TailorShop.uz`}
+      />
+      <meta
+        property="og:description"
+        content={`${category?.name} bo‘limidagi barcha furnitura mahsulotlari`}
+      />
+      <meta
+        property="og:url"
+        content={`https://www.tailorshop.uz/category/${id}`}
+      />
+      <meta
+        property="og:image"
+        content="https://www.tailorshop.uz/Logo.png"
+      />
+
+      {/* Category Schema */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": category?.name,
+          "url": `https://www.tailorshop.uz/category/${id}`
+        })}
+      </script>
+    </Helmet>
     <div className="max-w-7xl mx-auto px-4 py-10 pb-32">
       {/* Header */}
       <div className="mb-12">
@@ -150,6 +196,7 @@ const CategoryDetail = ({ addToCart, favorites, toggleFavorite }) => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

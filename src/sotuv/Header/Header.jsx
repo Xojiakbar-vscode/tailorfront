@@ -37,7 +37,7 @@ const Header = ({ cartItems = [], favorites = [] }) => {
       id: "favorites",
       label: "Like",
       path: "/favorites",
-      icon: <img src={Like} alt="Like" className="w-6 h-6" />,
+      icon: <img src={Like} alt="Sevimlilar" className="w-6 h-6" />,
       badge: favoriteCount,
     },
   ];
@@ -53,7 +53,7 @@ const Header = ({ cartItems = [], favorites = [] }) => {
       id: "cart",
       label: "Savat",
       path: "/cart",
-      icon: <img src={Savat} alt="Cart" className="w-7 h-7" />,
+      icon: <img src={Savat} alt="Savat" className="w-7 h-7" />,
       badge: cartCount,
     },
   ];
@@ -141,7 +141,7 @@ const Header = ({ cartItems = [], favorites = [] }) => {
             >
               <motion.img
                 src={TailorLogo}
-                alt="Logo"
+                alt="TailorShop.uz logotipi"
                 whileHover={{ scale: 1.05 }}
                 transition={iosBounce}
                 className="h-9 sm:h-11 lg:h-12 object-contain drop-shadow-sm"

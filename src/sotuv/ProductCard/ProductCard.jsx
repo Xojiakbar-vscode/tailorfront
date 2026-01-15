@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import dropDown from "../../assets/oG99I91tLW.json";
 
 // Image Swiper Komponenti
-const ImageSwiper = ({ images }) => {
+const ImageSwiper = ({ images, productName  }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   useEffect(() => {
     if (images.length <= 1) return;
@@ -22,7 +22,7 @@ const ImageSwiper = ({ images }) => {
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
         {images.map((img, idx) => (
-          <img key={idx} src={img} alt="Product" className="w-full h-full object-cover flex-shrink-0" />
+          <img key={idx} src={img} alt={`${productName} – TailorShop.uz furnitura mahsuloti`} className="w-full h-full object-cover flex-shrink-0" />
         ))}
       </div>
       {images.length > 1 && (
@@ -55,7 +55,7 @@ const ProductCard = ({ product, avg, toggleFavorite, isFavorite, addToCart }) =>
     <div className="group bg-white rounded-2xl border border-red-100 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col relative overflow-hidden">
       <div className="h-40 sm:h-60 lg:h-72 relative block">
         <Link to={`/product/${product.id}`} className="w-full h-full block">
-          <ImageSwiper images={imageUrls.length > 0 ? imageUrls : ["https://geostudy.uz/img/pictures/cifvooipg_rf1.jpeg"]} />
+          <ImageSwiper images={imageUrls.length > 0 ? imageUrls : ["https://geostudy.uz/img/pictures/cifvooipg_rf1.jpeg"]}  productName={product.name}/>
         </Link>
 
         {/* Yurakcha (Favorite) tugmasi - REAL TIME ISHLAYDI */}

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Helmet } from "react-helmet-async";
+
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   FaArrowLeft, FaSearch, FaFilter, FaSortAmountDown, 
@@ -161,6 +163,60 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
   }
 
   return (
+     <>
+    <Helmet>
+      <title>
+        Barcha Mahsulotlar | TailorShop.uz – Furnitura Katalogi
+      </title>
+
+      <meta
+        name="description"
+        content="TailorShop.uz barcha mahsulotlari: ip, tugma, zamok, rezina va boshqa tikuvchilik furnituralari. Ulgurji va chakana narxlarda."
+      />
+
+      <link
+        rel="canonical"
+        href="https://www.tailorshop.uz/all-products"
+      />
+
+      {/* ❗ FILTER & PAGINATION SEO HIMOYASI */}
+      <meta
+        name="robots"
+        content={
+          location.search
+            ? "noindex, follow"
+            : "index, follow"
+        }
+      />
+
+      {/* Open Graph */}
+      <meta
+        property="og:title"
+        content="Barcha Mahsulotlar | TailorShop.uz"
+      />
+      <meta
+        property="og:description"
+        content="Tikuvchilar uchun barcha furnitura mahsulotlari"
+      />
+      <meta
+        property="og:url"
+        content="https://www.tailorshop.uz/all-products"
+      />
+      <meta
+        property="og:image"
+        content="https://www.tailorshop.uz/Logo.png"
+      />
+
+      {/* Collection Schema */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": "Barcha Mahsulotlar",
+          "url": "https://www.tailorshop.uz/all-products"
+        })}
+      </script>
+    </Helmet>
     <div className="min-h-screen bg-[#f8f9fa] text-slate-900 font-sans">
       {/* Dynamic Header */}
       <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-sm">
@@ -452,6 +508,7 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
       {/* Footer Spacing for mobile */}
       <div className="h-20 lg:hidden"></div>
     </div>
+    </>
   );
 };
 

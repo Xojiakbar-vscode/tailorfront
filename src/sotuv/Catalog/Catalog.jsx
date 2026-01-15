@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
+
 import {
   FaArrowLeft,
   FaChevronDown,
@@ -68,6 +70,50 @@ const Catalog = () => {
   }
 
   return (
+     <>
+    <Helmet>
+      <title>
+        Katalog | TailorShop.uz – Namangandagi Furnitura Do‘koni
+      </title>
+
+      <meta
+        name="description"
+        content="TailorShop.uz katalogi: ip, tugma, zamok, rezina va boshqa tikuvchilik furnitura mahsulotlari. Namanganda ulgurji va chakana savdo."
+      />
+
+      <link
+        rel="canonical"
+        href="https://www.tailorshop.uz/catalog"
+      />
+
+      {/* Open Graph */}
+      <meta
+        property="og:title"
+        content="Katalog | TailorShop.uz"
+      />
+      <meta
+        property="og:description"
+        content="Tikuvchilar uchun furnitura mahsulotlari katalogi"
+      />
+      <meta
+        property="og:url"
+        content="https://www.tailorshop.uz/catalog"
+      />
+      <meta
+        property="og:image"
+        content="https://www.tailorshop.uz/Logo.png"
+      />
+
+      {/* Catalog Schema */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": "Furnitura Katalogi",
+          "url": "https://www.tailorshop.uz/catalog"
+        })}
+      </script>
+    </Helmet>
     <div className="min-h-screen bg-[#FFFDFD]">
       {/* 🔴 HEADER */}
       <div className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-red-100">
@@ -83,7 +129,8 @@ const Catalog = () => {
             <div className="w-9 h-9 bg-red-600 rounded-xl p-2 hidden sm:block">
               <img
                 src={KatalogIcon}
-                alt="Icon"
+                alt="TailorShop.uz katalog belgisi"
+
                 className="w-full h-full object-contain brightness-0 invert"
               />
             </div>
@@ -174,7 +221,8 @@ const Catalog = () => {
             <div className="relative rounded-[2rem] overflow-hidden h-64 mb-5">
               <img
                 src={CatalogImage}
-                alt="Catalog"
+               alt="TailorShop.uz katalogi — tikuvchilik furnitura mahsulotlari"
+
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-red-900/60 to-transparent"></div>
@@ -206,6 +254,7 @@ const Catalog = () => {
       </div>
       
     </div>
+    </>
   );
 };
 
