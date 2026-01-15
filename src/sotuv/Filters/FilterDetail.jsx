@@ -98,7 +98,7 @@ const CategoryDetail = ({ addToCart, favorites, toggleFavorite }) => {
                   <div className="relative aspect-[3/4] overflow-hidden rounded-[2.5rem] bg-gray-100 shadow-md">
                     <Link to={`/product/${product.id}`}>
                       <img
-                        src={product.images?.[0]?.image_url || "https://via.placeholder.com/400x500"}
+                        src={product.images?.[0]?.image_url || "https://geostudy.uz/img/pictures/cifvooipg_rf1.jpegx500"}
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />

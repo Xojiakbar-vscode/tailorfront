@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Statik fayllarni bloklamaymiz
+Allow: /assets/
+Allow: /images/
+
+# Keraksiz sahifalar (xohlasangiz)
+Disallow: /cart
+Disallow: /favorites
+
+Sitemap: https://tailorshop.uz/sitemap.xml

@@ -18,7 +18,7 @@ const Footer = () => {
     message: "",
   });
   const [isSending, setIsSending] = useState(false);
-
+const [showMap, setShowMap] = useState(false);
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -59,7 +59,7 @@ const Footer = () => {
                 <FaPaperPlane className="text-red-700" />
                 Murojaat uchun
               </h2>
-              <p className="text-red-600/70 font-medium mt-2">Taklif va xabaringizni qoldiring</p>
+              <p className="text-red-700 font-medium mt-2">Taklif va xabaringizni qoldiring</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 max-w-lg mx-auto lg:mx-0 w-full">
@@ -121,21 +121,30 @@ const Footer = () => {
                 <IoLocationSharp className="text-red-700" />
                 Manzilimiz
               </h2>
-              <p className="text-red-600/70 font-medium mt-2">Namangan shahri, Tailor Shop markazi</p>
+              <p className="text-red-700 font-medium mt-2">Namangan shahri, Tailor Shop markazi</p>
             </div>
 
             <div className="rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-red-50 h-[400px] group">
- <iframe
-                title="Tailor Shop Namangan Location"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                loading="lazy"
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3010.764054506165!2d71.6725194!3d41.0085372!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x38bb4d005b7de89b%3A0x84658e3671b49eb4!2sTailor%20shop%20Namangan!5e0!3m2!1sru!2s!4v1763573844208!5m2!1sru!2s"
-                className="hover:scale-104 transition-transform duration-500"
-              />
+<div className="rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-red-50 h-[400px] flex items-center justify-center bg-red-50">
+  {!showMap ? (
+    <button
+      onClick={() => setShowMap(true)}
+      className="px-8 py-5 bg-red-700 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl"
+    >
+      Xaritani ko‘rsatish
+    </button>
+  ) : (
+    <iframe
+      title="Tailor Shop Namangan Location"
+      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d12042.772034763268!2d71.65171446951922!3d41.010092033507505!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x38bb4d005b7de89b%3A0x84658e3671b49eb4!2sTailor%20shop%20Namangan!5e0!3m2!1sru!2s!4v1768476804826!5m2!1sru!2s"
+      loading="lazy"
+      referrerPolicy="no-referrer-when-downgrade"
+      className="w-full h-full border-0"
+      allowFullScreen
+    />
+  )}
+</div>
+
             </div>
           </div>
         </div>
@@ -143,17 +152,19 @@ const Footer = () => {
         {/* Bottom Section */}
         <div className="border-t border-red-100 pt-10 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex gap-4">
-            <a href="https://instagram.com" target="_blank" rel="noreferrer" className="w-12 h-12 flex items-center justify-center bg-red-50 rounded-xl text-red-700 hover:bg-red-700 hover:text-white transition-all shadow-sm">
+            <a href="https://www.instagram.com/tailor_shop_namangan?igsh=NnBmdWYxazF0ZXg2" aria-label="Tailor Shop Instagram sahifasi"
+  title="Instagram" target="_blank" rel="noreferrer" className="w-12 h-12 flex items-center justify-center bg-red-50 rounded-xl text-red-700 hover:bg-red-700 hover:text-white transition-all shadow-sm">
               <FaInstagram size={20} />
             </a>
-            <a href="https://t.me" target="_blank" rel="noreferrer" className="w-12 h-12 flex items-center justify-center bg-red-50 rounded-xl text-red-700 hover:bg-red-700 hover:text-white transition-all shadow-sm">
+            <a href="https://t.me/tailorshopnamangan1" target="_blank" rel="noreferrer" aria-label="Tailor Shop Telegram kanali"
+  title="Telegram" className="w-12 h-12 flex items-center justify-center bg-red-50 rounded-xl text-red-700 hover:bg-red-700 hover:text-white transition-all shadow-sm">
               <FaTelegram size={20} />
             </a>
-            <a href="tel:+998913560408" className="px-6 h-12 flex items-center justify-center bg-red-50 rounded-xl text-red-700 font-bold hover:bg-red-700 hover:text-white transition-all shadow-sm">
+            <a href="tel:+998913560408" className="px-4 h-12 flex items-center justify-center bg-red-50 rounded-xl text-red-700 font-bold hover:bg-red-700 hover:text-white transition-all shadow-sm">
               <FaPhoneAlt size={16} className="mr-2" /> +998 91 356 04 08
             </a>
           </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-red-400">
+          <p className="text-[10px] font-black uppercase tracking-widest text-red-700">
             © 2026 Tailor Shop Namangan. <span className="text-red-700">Premium Quality.</span>
           </p>
         </div>

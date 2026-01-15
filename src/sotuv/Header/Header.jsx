@@ -110,7 +110,9 @@ const Header = ({ cartItems = [], favorites = [] }) => {
           </div>
 
           {/* LABEL */}
-          <span className="text-[10px] font-black uppercase mt-1">
+          <span className="text-[10px] font-black uppercase mt-1 text-slate-800">
+
+
             {item.label}
           </span>
         </motion.div>
@@ -121,7 +123,7 @@ const Header = ({ cartItems = [], favorites = [] }) => {
   return (
     <header className="sticky top-0 z-50 w-full">
       {/* GLASS BAR */}
-      <div className="bg-white/60 backdrop-blur-xl border-b border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.06)] py-2">
+      <div className="bg-white border-b border-slate-200 border-b border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.06)] py-2">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between relative h-12 lg:h-16">
 

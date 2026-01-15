@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import logoImg from "../../assets/img2.svg";
-import CartModal from "../../sotuv/Cart/Cart";
-import bgImg from "../../assets/image.png";
+import bgImg from "../../assets/image.webp";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 
@@ -67,11 +66,6 @@ const HomeNav = () => {
           </p>
         </div>
       </section>
-
-      {/* Cart Modal */}
-      {showCartModal && (
-        <CartModal onClose={() => setShowCartModal(false)} />
-      )}
     </div>
   );
 };

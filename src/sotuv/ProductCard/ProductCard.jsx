@@ -55,7 +55,7 @@ const ProductCard = ({ product, avg, toggleFavorite, isFavorite, addToCart }) =>
     <div className="group bg-white rounded-2xl border border-red-100 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col relative overflow-hidden">
       <div className="h-40 sm:h-60 lg:h-72 relative block">
         <Link to={`/product/${product.id}`} className="w-full h-full block">
-          <ImageSwiper images={imageUrls.length > 0 ? imageUrls : ["https://via.placeholder.com/400"]} />
+          <ImageSwiper images={imageUrls.length > 0 ? imageUrls : ["https://geostudy.uz/img/pictures/cifvooipg_rf1.jpeg"]} />
         </Link>
 
         {/* Yurakcha (Favorite) tugmasi - REAL TIME ISHLAYDI */}
@@ -87,14 +87,14 @@ const ProductCard = ({ product, avg, toggleFavorite, isFavorite, addToCart }) =>
           <div className="flex text-yellow-400 text-[10px] sm:text-xs">
             {[...Array(5)].map((_, i) => <FaStar key={i} className={i < Math.round(avg) ? "text-yellow-400" : "text-red-200"} />)}
           </div>
-          <span className="text-red-400 text-[10px] font-bold">({avg})</span>
+          <span className="text-red-700 text-[10px] font-bold">({avg})</span>
         </div>
 
         <div className="mt-auto">
           <div className="flex flex-col mb-4">
             <span className="text-red-600 font-black text-base sm:text-xl">{currentPrice.toLocaleString()} so'm</span>
             {isDiscountActive && (
-              <span className="text-red-400 text-[10px] line-through decoration-red-500/30">{Number(product.price).toLocaleString()} so'm</span>
+              <span className="text-slate-600 text-[10px] line-through decoration-slate-400">{Number(product.price).toLocaleString()} so'm</span>
             )}
           </div>
           <button

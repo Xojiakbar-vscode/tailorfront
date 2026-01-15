@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
-  FaStar, FaShoppingCart, FaTruck, FaShieldAlt,
-  FaRegCommentDots, FaArrowLeft, FaCheck, FaHeart, FaRegHeart
-} from "react-icons/fa";
+  FaStar,
+  FaHeart,
+  FaRegHeart,
+  FaTruck,
+  FaShieldHalved ,
+  FaRegCommentDots,
+  FaArrowLeft,
+  FaCheck
+} from "react-icons/fa6";
+
+import { FaCartShopping } from "react-icons/fa6";
 import { AiOutlinePlus, AiOutlineMinus } from "react-icons/ai";
 
 // 1. Premium Swiper Komponenti
@@ -178,6 +186,8 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
               
               {/* Sevimli (Like) Tugmasi */}
               <button 
+              aria-label={isFavorite ? "Sevimlilardan olib tashlash" : "Sevimlilarga qo‘shish"}
+  title={isFavorite ? "Sevimlilardan olib tashlash" : "Sevimlilarga qo‘shish"}
                 onClick={() => toggleFavorite(product)}
                 className="absolute top-6 right-6 z-20 w-14 h-14 bg-white/90 backdrop-blur-md rounded-2xl flex items-center justify-center text-2xl shadow-xl hover:scale-110 active:scale-90 transition-all"
               >
@@ -249,7 +259,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                 })}
                 className="flex-grow h-16 bg-red-900 text-white rounded-3xl flex items-center justify-center gap-4 font-black text-sm uppercase tracking-widest hover:bg-red-600 active:scale-95 transition-all shadow-xl shadow-red-100"
               >
-                <FaShoppingCart /> Savatga qo'shish
+                <FaCartShopping  /> Savatga qo'shish
               </button>
             </div>
 
@@ -260,7 +270,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                 <span className="text-[10px] font-black text-slate-900 uppercase tracking-wider leading-tight">Tezkor<br />yetkazish</span>
               </div>
               <div className="flex items-center gap-4 p-5 bg-white border border-slate-100 rounded-3xl">
-                <div className="w-10 h-10 bg-green-50 text-green-500 rounded-xl flex items-center justify-center text-xl"><FaShieldAlt /></div>
+                <div className="w-10 h-10 bg-green-50 text-green-500 rounded-xl flex items-center justify-center text-xl"><FaShieldHalved  /></div>
                 <span className="text-[10px] font-black text-slate-900 uppercase tracking-wider leading-tight">Sifatli<br />kafolat</span>
               </div>
             </div>
@@ -429,7 +439,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                             {Math.round(itemPrice).toLocaleString()} <small className="text-[9px]">so'm</small>
                           </span>
                           <div className="w-9 h-9 bg-slate-900 text-white rounded-xl flex items-center justify-center group-hover:bg-red-600 transition-colors shadow-lg">
-                            <FaShoppingCart size={12} />
+                            <FaCartShopping  size={12} />
                           </div>
                         </div>
                       </div>

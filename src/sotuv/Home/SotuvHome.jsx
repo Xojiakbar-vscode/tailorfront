@@ -1,5 +1,4 @@
 import React from 'react'
-import 'bootstrap/dist/css/bootstrap.min.css';
 import Swiper from '../Swiper/Swiper';
 import Filters from '../Filters/Filters';
 import Products from '../ProductCard/ProductCard'; // Komponent nomi Products bo'lsa

@@ -341,7 +341,7 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
                         <div className="relative aspect-[4/5] rounded-[1.5rem] overflow-hidden mb-4">
                           <Link to={`/product/${product.id}`}>
                             <img
-                              src={product.images?.[0]?.image_url || "https://via.placeholder.com/400"}
+                              src={product.images?.[0]?.image_url || "https://geostudy.uz/img/pictures/cifvooipg_rf1.jpeg"}
                               alt={product.name}
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             />

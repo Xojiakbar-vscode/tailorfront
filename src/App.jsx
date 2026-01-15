@@ -1,7 +1,6 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ScrollToTop from "../ScrollToTop";
-import "bootstrap/dist/css/bootstrap.min.css";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import FooterNavbar from "./sotuv/FooterNavbar/FooterNavbar";
