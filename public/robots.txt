@@ -11,3 +11,4 @@ Disallow: /favorites
 Disallow: /search
 
 Sitemap: https://www.tailorshop.uz/sitemap.xml
+Sitemap: https://www.tailorshop.uz/image-sitemap.xml
