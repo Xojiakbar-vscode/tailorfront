@@ -5,7 +5,7 @@
       "has": [
         {
           "type": "host",
-          "value": "tailorshop.uz"
+          "value": "tailorshop\\.uz"
         }
       ],
       "destination": "https://www.tailorshop.uz/$1",
