@@ -13,6 +13,8 @@
     }
   ],
   "rewrites": [
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    { "source": "/image-sitemap.xml", "destination": "/api/image-sitemap" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
