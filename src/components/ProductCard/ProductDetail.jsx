@@ -72,8 +72,7 @@ const isDiscountValid = (discount) => {
 
 // 2. Asosiy Mahsulot Tafsiloti Sahifasi
 const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
-  const { id } = useParams();
-  const [product, setProduct] = useState(null);
+  const { slug } = useParams();  const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);

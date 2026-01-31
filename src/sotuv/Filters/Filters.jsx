@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation } from "swiper/modules";
 
-// Swiper stillari
 import "swiper/css";
 import "swiper/css/navigation";
 import "./Filters.css";
@@ -20,6 +19,7 @@ const Filters = () => {
       try {
         const response = await fetch(API_URL);
         const data = await response.json();
+
         const parentCategories = data.filter((cat) => cat.parent_id === null);
         setCategories(parentCategories);
       } catch (error) {
@@ -33,8 +33,13 @@ const Filters = () => {
 
   if (loading) return null;
 
-  // Agar kategoriyalar 5 tadan ko'p bo'lsa Slider, bo'lmasa oddiy List chiqadi
   const useSwiper = categories.length > 5;
+
+  const goToCategory = (category) => {
+    // ✅ slug bo'lsa slug bilan, bo'lmasa id bilan (fallback)
+    const slugOrId = category.slug || category.id;
+    navigate(`/category/${slugOrId}`);
+  };
 
   return (
     <section className="filters-container" data-aos="fade-up">
@@ -49,11 +54,7 @@ const Filters = () => {
         >
           {categories.map((category) => (
             <SwiperSlide key={category.id} style={{ width: "auto" }}>
-              <button
-                className="filter-btn"
-                onClick={() => navigate(`/category/${category.id}`)}
-              >
-                {/* Rasm backenddan kelsa chiqadi, bo'lmasa chiqarilmaydi */}
+              <button className="filter-btn" onClick={() => goToCategory(category)}>
                 {category.image && <img src={category.image} alt={category.name} />}
                 {category.name}
               </button>
@@ -66,7 +67,7 @@ const Filters = () => {
             <button
               key={category.id}
               className="filter-btn"
-            onClick={() => navigate(`/category/${category.id}`)}
+              onClick={() => goToCategory(category)}
             >
               {category.image && <img src={category.image} alt={category.name} />}
               {category.name}

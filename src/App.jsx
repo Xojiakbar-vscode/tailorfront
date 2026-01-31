@@ -123,15 +123,15 @@ const App = () => {
           </div>
         </div>
       }>
-              <Header
-              cartItems={cartItems}
-                favorites={favorites}
-        
-              />
+        <Header
+          cartItems={cartItems}
+          favorites={favorites}
+
+        />
         <Routes>
 
           <Route path="/" element={<SotuvHome addToCart={addToCart} cartItems={cartItems} favorites={favorites} toggleFavorite={toggleFavorite} />} />
-          <Route path="/yana" element={<Home addToCart={addToCart}  favorites={favorites} toggleFavorite={toggleFavorite} />} />
+          <Route path="/yana" element={<Home addToCart={addToCart} favorites={favorites} toggleFavorite={toggleFavorite} />} />
           <Route path="/search" element={<SearchPage favorites={favorites} toggleFavorite={toggleFavorite} addToCart={addToCart} />} />
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/cart" element={<Cart cartItems={cartItems} setCartItems={setCartItems} />} />
@@ -143,7 +143,7 @@ const App = () => {
             toggleFavorite={toggleFavorite}
           />} />
           <Route
-            path="/category/:id"
+            path="/category/:slug"
             element={<CategoryDetail addToCart={addToCart} favorites={favorites} toggleFavorite={toggleFavorite} />}
           />
         </Routes>
