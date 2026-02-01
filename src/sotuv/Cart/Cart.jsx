@@ -526,7 +526,7 @@ const Cart = ({ cartItems, setCartItems }) => {
                               {((item.discountedPrice || item.price) * item.quantity).toLocaleString()} so'm
                             </p>
                             <p className="text-xs sm:text-sm text-gray-500">
-                              birligi: {(item.discountedPrice || item.price).toLocaleString()} so'm
+                              Jami summa: {(item.discountedPrice || item.price).toLocaleString()} so'm
                             </p>
                           </div>
                         </div>

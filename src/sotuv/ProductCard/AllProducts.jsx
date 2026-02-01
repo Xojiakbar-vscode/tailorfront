@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
-  FaArrowLeft, FaSearch, FaFilter, FaSortAmountDown, 
-  FaTimes, FaStar, FaShoppingCart, FaHeart, 
-  FaRegHeart, FaPercent, FaChevronDown, FaUndoAlt
+  FaArrowLeft, FaSearch, FaFilter, FaTimes, FaStar, 
+  FaShoppingCart, FaHeart, FaRegHeart, FaPercent, 
+  FaChevronDown, FaUndoAlt
 } from 'react-icons/fa';
 import { GiClothes } from 'react-icons/gi';
 
@@ -20,21 +20,18 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('default');
   const [showFilters, setShowFilters] = useState(false);
-  const [priceRange, setPriceRange] = useState([0, 10000000]);
+  const [priceRange, setPriceRange] = useState([0, 20000000]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [page, setPage] = useState(1);
   const itemsPerPage = 12;
   
-  const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     fetchAllData();
     const searchParams = new URLSearchParams(location.search);
     const categoryFromUrl = searchParams.get('category');
-    if (categoryFromUrl) {
-      setSelectedCategory(categoryFromUrl);
-    }
+    if (categoryFromUrl) setSelectedCategory(categoryFromUrl);
   }, [location]);
 
   useEffect(() => {
@@ -50,18 +47,32 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
       const productsData = await productsRes.json();
       const categoriesData = await categoriesRes.json();
       
-      setProducts(productsData);
-      setFilteredProducts(productsData);
-      const mainCategories = categoriesData.filter(cat => cat.parent_id === null);
-      setCategories(mainCategories);
+      // IS_ACTIVE TEKSHIRUVI: Faqat aktiv mahsulotlarni filtrlab olamiz
+      const activeProducts = productsData.filter(p => p.is_active !== false);
       
-      const maxPrice = productsData.length > 0 ? Math.max(...productsData.map(p => p.price)) : 10000000;
+      setProducts(activeProducts);
+      setFilteredProducts(activeProducts);
+      setCategories(categoriesData.filter(cat => cat.parent_id === null));
+      
+      const maxPrice = activeProducts.length > 0 
+        ? Math.max(...activeProducts.map(p => Number(p.price_uzs || p.price || 0))) 
+        : 20000000;
       setPriceRange([0, maxPrice]);
     } catch (error) {
       console.error('Xatolik:', error);
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 800);
     }
+  };
+
+  const calculateFinalPrice = (product) => {
+    let price = Number(product.price_uzs || product.price || 0);
+    const discount = product.discount;
+    if (discount && discount.is_active !== false) {
+      if (discount.percent) price = price * (1 - Number(discount.percent) / 100);
+      else if (discount.amount) price = Math.max(0, price - Number(discount.amount));
+    }
+    return price;
   };
 
   const applyFilters = () => {
@@ -75,22 +86,19 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
     }
 
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(product => 
-        product.category_id === parseInt(selectedCategory)
-      );
+      filtered = filtered.filter(product => product.category_id === parseInt(selectedCategory));
     }
 
-    filtered = filtered.filter(product =>
-      product.price >= priceRange[0] && product.price <= priceRange[1]
-    );
+    filtered = filtered.filter(product => {
+      const p = Number(product.price_uzs || product.price || 0);
+      return p >= priceRange[0] && p <= priceRange[1];
+    });
 
     if (selectedTags.length > 0) {
       filtered = filtered.filter(product => {
         const productTags = [
           product.is_latest && 'latest',
           product.is_popular && 'popular',
-          product.is_featured && 'featured',
-          product.is_best_seller && 'best_seller',
           (product.discount && product.discount.is_active) && 'discount'
         ].filter(Boolean);
         return selectedTags.some(tag => productTags.includes(tag));
@@ -100,9 +108,6 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
     switch (sortBy) {
       case 'price_low': filtered.sort((a, b) => calculateFinalPrice(a) - calculateFinalPrice(b)); break;
       case 'price_high': filtered.sort((a, b) => calculateFinalPrice(b) - calculateFinalPrice(a)); break;
-      case 'name_asc': filtered.sort((a, b) => a.name.localeCompare(b.name)); break;
-      case 'name_desc': filtered.sort((a, b) => b.name.localeCompare(a.name)); break;
-      case 'popular': filtered.sort((a, b) => (b.is_popular ? 1 : 0) - (a.is_popular ? 1 : 0)); break;
       case 'newest': filtered.sort((a, b) => (b.is_latest ? 1 : 0) - (a.is_latest ? 1 : 0)); break;
       default: break;
     }
@@ -111,43 +116,24 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
     setPage(1);
   };
 
-  const calculateFinalPrice = (product) => {
-    let price = Number(product.price);
-    const discount = product.discount;
-    if (discount && discount.is_active !== false) {
-      if (discount.percent) price = price * (1 - Number(discount.percent) / 100);
-      else if (discount.amount) price = Math.max(0, price - Number(discount.amount));
-    }
-    return price;
-  };
-
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  
   const getCurrentProducts = () => {
     const startIndex = (page - 1) * itemsPerPage;
     return filteredProducts.slice(startIndex, startIndex + itemsPerPage);
   };
 
-  // --- YANGI PAGINATION MANTIQI (UCH NUQTA BILAN) ---
   const getPaginationRange = () => {
     const delta = 1; 
     const range = [];
     const rangeWithDots = [];
     let l;
-
     for (let i = 1; i <= totalPages; i++) {
-      if (i === 1 || i === totalPages || (i >= page - delta && i <= page + delta)) {
-        range.push(i);
-      }
+      if (i === 1 || i === totalPages || (i >= page - delta && i <= page + delta)) range.push(i);
     }
-
     for (let i of range) {
       if (l) {
-        if (i - l === 2) {
-          rangeWithDots.push(l + 1);
-        } else if (i - l !== 1) {
-          rangeWithDots.push('...');
-        }
+        if (i - l === 2) rangeWithDots.push(l + 1);
+        else if (i - l !== 1) rangeWithDots.push('...');
       }
       rangeWithDots.push(i);
       l = i;
@@ -159,38 +145,26 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
     setPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  // ------------------------------------------------
 
   const resetFilters = () => {
     setSearchTerm('');
     setSelectedCategory('all');
     setSortBy('default');
-    setPriceRange([0, Math.max(...products.map(p => p.price))]);
     setSelectedTags([]);
+    if (products.length > 0) {
+      setPriceRange([0, Math.max(...products.map(p => Number(p.price_uzs || p.price || 0)))]);
+    }
   };
 
-  const toggleTag = (tag) => {
-    setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
-  };
-
-  const formatPrice = (price) => price.toLocaleString('uz-UZ') + ' so\'m';
-
-  const tags = [
-    { id: 'latest', label: 'Yangi', color: 'bg-blue-500' },
-    { id: 'popular', label: 'Trend', color: 'bg-orange-500' },
-    { id: 'featured', label: 'Tanlangan', color: 'bg-purple-500' },
-    { id: 'best_seller', label: 'TOP', color: 'bg-green-500' },
-    { id: 'discount', label: 'Aksiya', color: 'bg-red-500' }
-  ];
+  const formatPrice = (price) => Number(price).toLocaleString('uz-UZ') + " SO'M";
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white">
         <div className="relative">
-          <div className="w-20 h-20 border-4 border-red-100 border-t-red-600 rounded-full animate-spin"></div>
-          <GiClothes className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl text-red-600 animate-pulse" />
+          <div className="w-24 h-24 border-8 border-red-50 border-t-red-600 rounded-full animate-spin"></div>
         </div>
-        <p className="mt-6 text-gray-500 font-medium tracking-widest uppercase text-xs">Yuklanmoqda...</p>
+        <p className="mt-8 text-gray-400 font-black tracking-[0.3em] uppercase text-[10px] animate-pulse">TailorShop Yuklanmoqda...</p>
       </div>
     );
   }
@@ -199,292 +173,271 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
     <>
       <Helmet>
         <title>Barcha Mahsulotlar | TailorShop.uz – Furnitura Katalogi</title>
-        <meta name="description" content="TailorShop.uz barcha mahsulotlari: ip, tugma, zamok, rezina va boshqa tikuvchilik furnituralari." />
+        <meta name="description" content="TailorShop.uz katalogida ip, tugma, zamok va barcha turdagi tikuvchilik furnituralarini hamyonbop narxlarda toping." />
         <link rel="canonical" href="https://www.tailorshop.uz/all-products" />
-        <meta name="robots" content={location.search ? "noindex, follow" : "index, follow"} />
         <meta property="og:title" content="Barcha Mahsulotlar | TailorShop.uz" />
-        <meta property="og:description" content="Tikuvchilar uchun barcha furnitura mahsulotlari" />
+        <meta property="og:description" content="Eng sifatli tikuvchilik anjomlari va aksessuarlari." />
         <meta property="og:url" content="https://www.tailorshop.uz/all-products" />
-        <meta property="og:image" content="https://www.tailorshop.uz/Logo.png" />
+        <meta property="og:type" content="website" />
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "CollectionPage",
-            "name": "Barcha Mahsulotlar",
+            "name": "Barcha Mahsulotlar Katalogi",
+            "description": "TailorShop tikuvchilik furnituralari to'plami",
             "url": "https://www.tailorshop.uz/all-products"
           })}
         </script>
       </Helmet>
 
-      <div className="min-h-screen bg-[#f8f9fa] text-slate-900 font-sans">
-        <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col py-4 gap-4">
-              <div className="flex items-center justify-between">
-                <Link to="/" className="flex items-center gap-3 group">
-                  <div className="p-2.5 rounded-xl bg-white shadow-sm border border-gray-100 group-hover:border-red-200 transition-all">
-                    <FaArrowLeft className="text-gray-600 group-hover:text-red-600 transition-colors" />
-                  </div>
-                  <h1 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                    Katalog
-                  </h1>
-                </Link>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-sm font-semibold ${
-                      showFilters ? 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-200' : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    {showFilters ? <FaTimes /> : <FaFilter />}
-                    <span className="hidden sm:inline">Filtrlar</span>
-                  </button>
+      <div className="min-h-screen bg-[#fafafa] text-slate-900 pb-20 font-sans">
+        <header className="sticky top-0 z-[110] bg-white/80 backdrop-blur-2xl border-b border-gray-100 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <Link to="/" className="flex items-center gap-3 active:scale-95 transition-transform group">
+                <div className="bg-red-600 p-2.5 rounded-2xl shadow-lg shadow-red-200 group-hover:rotate-[-10deg] transition-all">
+                  <FaArrowLeft className="text-white text-sm" />
                 </div>
+                <h1 className="text-2xl font-black uppercase italic tracking-tighter">Katalog</h1>
+              </Link>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`flex items-center gap-2 px-5 py-3 rounded-2xl border transition-all active:scale-90 text-sm font-bold ${
+                    showFilters ? 'bg-red-600 border-red-600 text-white shadow-xl shadow-red-200' : 'bg-white border-gray-200 text-gray-700'
+                  }`}
+                >
+                  <FaFilter className={showFilters ? 'rotate-180 transition-transform' : ''} />
+                  <span className="hidden sm:inline">Filtrlar</span>
+                </button>
               </div>
-              <div className="relative group max-w-3xl mx-auto w-full">
-                <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-500 transition-colors" />
-                <input
-                  type="text"
-                  placeholder="Nima qidiramiz? (ip, tugma...)"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-12 py-3.5 bg-gray-100/50 border-transparent border focus:bg-white focus:border-red-200 focus:ring-4 focus:ring-red-500/5 rounded-2xl transition-all outline-none text-sm font-medium"
-                />
-                {searchTerm && (
-                  <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full transition-colors">
-                    <FaTimes className="text-gray-400" />
-                  </button>
-                )}
-              </div>
+            </div>
+            
+            <div className="relative group max-w-4xl mx-auto w-full">
+              <FaSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-600 transition-colors" />
+              <input
+                type="text"
+                placeholder="Mahsulotlarni qidirish..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-14 pr-12 py-4 bg-gray-100 border-2 border-transparent focus:bg-white focus:border-red-600/10 focus:ring-4 focus:ring-red-600/5 rounded-[1.8rem] outline-none text-sm font-bold transition-all"
+              />
+              {searchTerm && (
+                <button onClick={() => setSearchTerm('')} className="absolute right-5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-red-600 transition-colors">
+                  <FaTimes />
+                </button>
+              )}
             </div>
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row gap-8">
-            <aside className={`lg:w-72 flex-shrink-0 space-y-6 transition-all duration-300 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-              <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-40">
+            {/* Sidebar */}
+            <aside className={`lg:w-72 lg:block transition-all duration-500 ${showFilters ? 'block animate-fadeIn' : 'hidden'}`}>
+              <div className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/50 sticky top-40 border border-gray-50">
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-lg font-bold">Filtrlash</h3>
-                  <button onClick={resetFilters} className="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Tozalash">
-                    <FaUndoAlt size={14} />
+                  <h3 className="font-black uppercase text-xs tracking-widest text-red-600">Filtrlash</h3>
+                  <button onClick={resetFilters} className="text-gray-300 hover:text-red-600 transition-colors active:rotate-180 duration-500">
+                    <FaUndoAlt size={14}/>
                   </button>
                 </div>
-                <div className="mb-8">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center justify-between">
-                    Kategoriyalar <FaChevronDown size={10} />
-                  </h4>
-                  <div className="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar pr-2">
-                    <button
-                      onClick={() => setSelectedCategory('all')}
-                      className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm transition-all ${
-                        selectedCategory === 'all' ? 'bg-red-50 text-red-600 font-bold' : 'text-gray-600 hover:bg-gray-50'
-                      }`}
+
+                <div className="space-y-8">
+                  {/* Kategoriyalar */}
+                  <div>
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase mb-4 flex items-center justify-between">
+                      Kategoriyalar <FaChevronDown size={8} />
+                    </h4>
+                    <div className="flex flex-col gap-1.5 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                      <button 
+                        onClick={() => setSelectedCategory('all')} 
+                        className={`text-left px-4 py-3 rounded-xl text-[11px] font-black uppercase transition-all ${selectedCategory === 'all' ? 'bg-red-600 text-white shadow-lg shadow-red-100' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}
+                      >
+                        Barchasi
+                      </button>
+                      {categories.map(cat => (
+                        <button 
+                          key={cat.id} 
+                          onClick={() => setSelectedCategory(cat.id.toString())} 
+                          className={`text-left px-4 py-3 rounded-xl text-[11px] font-black uppercase transition-all ${selectedCategory === cat.id.toString() ? 'bg-red-600 text-white shadow-lg shadow-red-100' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}
+                        >
+                          {cat.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Narx */}
+                  <div>
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase mb-4">Maksimal Narx</h4>
+                    <input
+                      type="range"
+                      min="0"
+                      max={products.length > 0 ? Math.max(...products.map(p => Number(p.price_uzs || p.price || 0))) : 20000000}
+                      value={priceRange[1]}
+                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                      className="w-full accent-red-600 h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="mt-3 text-[11px] font-black text-red-600 bg-red-50 px-3 py-1.5 rounded-xl inline-block">
+                      {formatPrice(priceRange[1])}
+                    </div>
+                  </div>
+
+                  {/* Saralash */}
+                  <div>
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase mb-4">Tartib</h4>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-[11px] font-black uppercase outline-none focus:ring-2 focus:ring-red-600/20"
                     >
-                      <span>Barchasi</span>
-                      <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full">{products.length}</span>
-                    </button>
-                    {categories.map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => setSelectedCategory(cat.id.toString())}
-                        className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm transition-all ${
-                          selectedCategory === cat.id.toString() ? 'bg-red-50 text-red-600 font-bold' : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        <span className="truncate mr-2">{cat.name}</span>
-                        <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full">
-                          {products.filter(p => p.category_id === cat.id).length}
-                        </span>
-                      </button>
-                    ))}
+                      <option value="default">Odatiy</option>
+                      <option value="price_low">Arzonroq</option>
+                      <option value="price_high">Qimmatroq</option>
+                      <option value="newest">Eng yangi</option>
+                    </select>
                   </div>
-                </div>
-                <div className="mb-8">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Narx chegarasi</h4>
-                  <input
-                    type="range"
-                    min="0"
-                    max={products.length > 0 ? Math.max(...products.map(p => p.price)) : 10000000}
-                    value={priceRange[1]}
-                    onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                    className="w-full h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-red-600"
-                  />
-                  <div className="flex justify-between mt-3 text-[11px] font-bold text-gray-500">
-                    <span>{formatPrice(priceRange[0])}</span>
-                    <span className="text-red-600">{formatPrice(priceRange[1])}</span>
-                  </div>
-                </div>
-                <div className="mb-8">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Saralash teglari</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map(tag => (
-                      <button
-                        key={tag.id}
-                        onClick={() => toggleTag(tag.id)}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all border ${
-                          selectedTags.includes(tag.id) ? 'bg-gray-900 border-gray-900 text-white' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                        }`}
-                      >
-                        {tag.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Tartiblash</h4>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-red-500/20 outline-none"
-                  >
-                    <option value="default">Odatiy</option>
-                    <option value="price_low">Arzonroq</option>
-                    <option value="price_high">Qimmatroq</option>
-                    <option value="popular">Ommabop</option>
-                    <option value="newest">Eng yangi</option>
-                  </select>
                 </div>
               </div>
             </aside>
 
+            {/* Mahsulotlar Gridi */}
             <section className="flex-1">
-              <div className="flex items-center justify-between mb-8">
-                <p className="text-sm font-medium text-gray-500">
-                  Natijalar: <span className="text-gray-900 font-bold">{filteredProducts.length}</span> ta mahsulot
+              <div className="flex items-center justify-between mb-8 px-2">
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                  Natijalar: <span className="text-red-600">{filteredProducts.length}</span> ta mahsulot
                 </p>
-                <div className="h-px flex-1 mx-6 bg-gray-200 hidden sm:block"></div>
               </div>
 
               {filteredProducts.length === 0 ? (
-                <div className="text-center py-20 bg-white rounded-[2rem] border-2 border-dashed border-gray-100">
-                  <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <FaSearch className="text-gray-300 text-3xl" />
+                <div className="text-center py-24 bg-white rounded-[3rem] border-2 border-dashed border-gray-100 animate-fadeIn">
+                  <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <FaSearch className="text-gray-200 text-4xl" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-800">Ma'lumot topilmadi</h3>
-                  <p className="text-gray-500 mt-2 mb-8">Qidiruv parametrlarini o'zgartirib ko'ring</p>
-                  <button onClick={resetFilters} className="px-8 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-all">
-                    Hammasini ko'rsatish
-                  </button>
+                  <h3 className="text-xl font-black uppercase italic tracking-tighter text-gray-800">Ma'lumot topilmadi</h3>
+                  <button onClick={resetFilters} className="mt-6 px-8 py-4 bg-gray-950 text-white rounded-2xl font-black uppercase text-[10px] hover:bg-red-600 transition-all shadow-xl">Filtrlarni tozalash</button>
                 </div>
               ) : (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {getCurrentProducts().map(product => {
-                      const finalPrice = calculateFinalPrice(product);
-                      const isDiscountActive = product.discount && product.discount.is_active !== false;
-                      const isFavorite = favorites.some(fav => fav.id === product.id);
+                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
+                  {getCurrentProducts().map((product, idx) => {
+                    const finalPrice = calculateFinalPrice(product);
+                    const isDiscountActive = product.discount && product.discount.is_active !== false;
+                    const isFavorite = favorites.some(fav => fav.id === product.id);
+                    const mainImg = product.images?.[0]?.image_url || "https://geostudy.uz/img/pictures/cifvooipg_rf1.jpeg";
 
-                      return (
-                        <div key={product.id} className="group relative bg-white rounded-[2rem] p-3 border border-transparent hover:border-red-100 hover:shadow-[0_20px_50px_rgba(239,68,68,0.05)] transition-all duration-500">
-                          <div className="relative aspect-[4/5] rounded-[1.5rem] overflow-hidden mb-4">
-                            <Link to={`/product/${product.id}`}>
-                              <img
-                                src={product.images?.[0]?.image_url || "https://geostudy.uz/img/pictures/cifvooipg_rf1.jpeg"}
-                                alt={product.name}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                              />
-                            </Link>
-                            <div className="absolute top-3 left-3 flex flex-col gap-2">
+                    return (
+                      <div 
+                        key={product.id} 
+                        className="group bg-white rounded-[2.2rem] p-2 sm:p-4 border border-transparent hover:border-red-600/10 transition-all duration-500 flex flex-col h-full shadow-sm hover:shadow-2xl hover:-translate-y-2 animate-slideUp"
+                        style={{ animationDelay: `${idx * 60}ms` }}
+                      >
+                        <div className="relative aspect-[3/4] rounded-[1.8rem] overflow-hidden mb-4 bg-gray-50">
+                          <Link to={`/product/${product.id}`}>
+                            <img 
+                              src={mainImg} 
+                              alt={product.name} 
+                              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
+                            />
+                          </Link>
+                          
+                          <div className="absolute top-3 left-3 flex flex-col gap-2">
+                            {isDiscountActive && (
+                              <div className="bg-red-600 text-white text-[9px] font-black px-2.5 py-1 rounded-lg animate-pulse shadow-lg flex items-center gap-1">
+                                <FaPercent size={8}/> {Math.round(product.discount.percent || 0)}%
+                              </div>
+                            )}
+                            {product.is_latest && (
+                              <span className="bg-black text-white text-[9px] font-black px-2.5 py-1 rounded-lg shadow-lg">NEW</span>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() => toggleFavorite(product)}
+                            className={`absolute top-3 right-3 p-3 rounded-2xl backdrop-blur-md transition-all active:scale-75 shadow-lg ${isFavorite ? 'bg-red-600 text-white' : 'bg-white/90 text-gray-400 hover:text-red-600'}`}
+                          >
+                            {isFavorite ? <FaHeart size={14}/> : <FaRegHeart size={14}/>}
+                          </button>
+                        </div>
+
+                        <div className="flex flex-col flex-grow px-2">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] italic">Tailor Premium</span>
+                            <div className="flex items-center gap-1 text-[10px] font-black text-orange-400"><FaStar size={10}/> 5.0</div>
+                          </div>
+                          <Link to={`/product/${product.id}`}>
+                            <h3 className="text-[13px] sm:text-[15px] font-black text-gray-900 line-clamp-2 mb-4 uppercase italic leading-tight group-hover:text-red-600 transition-colors">
+                              {product.name}
+                            </h3>
+                          </Link>
+                          
+                          <div className="mt-auto">
+                            <div className="mb-4">
+                              <p className="text-base sm:text-xl font-black text-red-600 tracking-tighter leading-none">{formatPrice(finalPrice)}</p>
                               {isDiscountActive && (
-                                <div className="bg-red-600 text-white text-[10px] font-black px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-lg">
-                                  <FaPercent size={8} />
-                                  {product.discount.percent ? `${Math.round(product.discount.percent)}%` : 'AKSIYA'}
-                                </div>
-                              )}
-                              {product.is_latest && (
-                                <div className="bg-blue-600 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-lg">YANGI</div>
+                                <p className="text-[10px] text-gray-400 line-through font-bold mt-1">{formatPrice(product.price_uzs || product.price)}</p>
                               )}
                             </div>
+
                             <button
-                              onClick={() => toggleFavorite(product)}
-                              className={`absolute top-3 right-3 p-3 rounded-2xl backdrop-blur-md transition-all ${
-                                isFavorite ? 'bg-red-500 text-white' : 'bg-white/90 text-gray-400 hover:text-red-500 shadow-sm'
-                              }`}
+                              onClick={() => addToCart({ ...product, price: finalPrice, quantity: 1, image: mainImg })}
+                              className="w-full py-4 bg-gray-950 text-white rounded-[1.3rem] flex items-center justify-center gap-2 hover:bg-red-600 transition-all duration-300 active:scale-95 shadow-lg hover:shadow-red-600/30 group/btn"
                             >
-                              {isFavorite ? <FaHeart /> : <FaRegHeart />}
+                              <FaShoppingCart size={14} className="group-hover/btn:animate-bounce" />
+                              <span className="text-[10px] font-black uppercase italic">Savatga Qo'shish</span>
                             </button>
                           </div>
-                          <div className="px-2 pb-2">
-                            <div className="flex justify-between items-start mb-1">
-                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Premium Collection</span>
-                              <div className="flex items-center gap-1 text-[10px] font-bold text-orange-500">
-                                <FaStar /> 4.5
-                              </div>
-                            </div>
-                            <Link to={`/product/${product.id}`}>
-                              <h3 className="font-bold text-gray-900 group-hover:text-red-600 transition-colors line-clamp-1 mb-3">
-                                {product.name}
-                              </h3>
-                            </Link>
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="text-lg font-black text-gray-900">
-                                  {formatPrice(finalPrice)}
-                                </div>
-                                {isDiscountActive && (
-                                  <div className="text-xs text-gray-400 line-through font-medium">
-                                    {formatPrice(Number(product.price))}
-                                  </div>
-                                )}
-                              </div>
-                              <button
-                                onClick={() => addToCart({ ...product, price: finalPrice, quantity: 1, image: product.images?.[0]?.image_url })}
-                                className="p-4 bg-gray-900 text-white rounded-2xl hover:bg-red-600 transition-all shadow-xl shadow-gray-200 hover:shadow-red-200 active:scale-90"
-                              >
-                                <FaShoppingCart size={18} />
-                              </button>
-                            </div>
-                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* MODERN PAGINATION WITH ELLIPSIS (...) */}
-                  {totalPages > 1 && (
-                    <div className="mt-16 flex justify-center items-center gap-2">
-                      <button
-                        disabled={page === 1}
-                        onClick={() => handlePageChange(page - 1)}
-                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border border-gray-200 flex items-center justify-center hover:bg-white hover:shadow-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                      >
-                        ←
-                      </button>
-                      <div className="flex items-center gap-1 sm:gap-2 bg-white px-3 py-2 rounded-2xl shadow-sm border border-gray-100">
-                        {getPaginationRange().map((p, i) => (
-                          <button
-                            key={i}
-                            disabled={p === '...'}
-                            onClick={() => p !== '...' && handlePageChange(p)}
-                            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl text-xs font-bold transition-all ${
-                              page === p 
-                                ? 'bg-red-600 text-white shadow-md shadow-red-100' 
-                                : p === '...' 
-                                  ? 'text-gray-400 cursor-default' 
-                                  : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
-                            }`}
-                          >
-                            {p}
-                          </button>
-                        ))}
                       </div>
-                      <button
-                        disabled={page === totalPages}
-                        onClick={() => handlePageChange(page + 1)}
-                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border border-gray-200 flex items-center justify-center hover:bg-white hover:shadow-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                      >
-                        →
-                      </button>
-                    </div>
-                  )}
-                </>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-20 flex justify-center items-center gap-2 sm:gap-3">
+                  <button 
+                    disabled={page === 1}
+                    onClick={() => handlePageChange(page - 1)}
+                    className="w-12 h-12 rounded-2xl border border-gray-100 bg-white text-gray-400 flex items-center justify-center disabled:opacity-20 active:scale-75 transition-all shadow-sm"
+                  >←</button>
+                  {getPaginationRange().map((p, i) => (
+                    <button
+                      key={i}
+                      disabled={p === '...'}
+                      onClick={() => p !== '...' && handlePageChange(p)}
+                      className={`w-12 h-12 rounded-2xl text-[11px] font-black transition-all active:scale-75 ${
+                        page === p ? 'bg-red-600 text-white shadow-xl shadow-red-200' : 'bg-white text-gray-400 border border-gray-100 hover:border-red-200'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button 
+                    disabled={page === totalPages}
+                    onClick={() => handlePageChange(page + 1)}
+                    className="w-12 h-12 rounded-2xl border border-gray-100 bg-white text-gray-400 flex items-center justify-center disabled:opacity-20 active:scale-75 transition-all shadow-sm"
+                  >→</button>
+                </div>
               )}
             </section>
           </div>
         </main>
-        <div className="h-20 lg:hidden"></div>
       </div>
+
+      <style>{`
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(40px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slideUp { animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #fee2e2; border-radius: 10px; }
+      `}</style>
     </>
   );
 };

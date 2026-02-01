@@ -8,7 +8,7 @@ import {
 } from "react-icons/fa";
 
 const CategoryDetail = ({ addToCart, favorites, toggleFavorite }) => {
-  const { slug } = useParams(); // ✅ slug
+  const { slug } = useParams(); 
   const [category, setCategory] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,7 +17,7 @@ const CategoryDetail = ({ addToCart, favorites, toggleFavorite }) => {
     const fetchCategoryData = async () => {
       setLoading(true);
       try {
-        // ✅ 1) category ni slug bilan olamiz
+        // 1) Kategoriyani slug orqali olish
         const catRes = await fetch(`https://tailorback2025-production.up.railway.app/api/categories/slug/${slug}`);
         const catData = await catRes.json();
 
@@ -27,7 +27,7 @@ const CategoryDetail = ({ addToCart, favorites, toggleFavorite }) => {
 
         setCategory(catData);
 
-        // ✅ 2) products ni category_id orqali olamiz
+        // 2) Mahsulotlarni kategoriya ID si orqali olish
         const prodRes = await fetch(
           `https://tailorback2025-production.up.railway.app/api/products?category_id=${catData.id}`
         );
@@ -73,38 +73,14 @@ const CategoryDetail = ({ addToCart, favorites, toggleFavorite }) => {
     <>
       <Helmet>
         <title>{category?.name} | TailorShop.uz – Furnitura Katalogi</title>
-
         <meta
           name="description"
-          content={`${category?.name} furnitura mahsulotlari. TailorShop.uz Namanganda joylashgan tikuvchilik do‘koni. Ulgurji va chakana savdo.`}
+          content={`${category?.name} furnitura mahsulotlari. TailorShop.uz Namanganda joylashgan tikuvchilik do‘koni.`}
         />
-
         <link
           rel="canonical"
           href={`https://www.tailorshop.uz/category/${slug}`}
         />
-
-        {/* Open Graph */}
-        <meta property="og:title" content={`${category?.name} | TailorShop.uz`} />
-        <meta
-          property="og:description"
-          content={`${category?.name} bo‘limidagi barcha furnitura mahsulotlari`}
-        />
-        <meta
-          property="og:url"
-          content={`https://www.tailorshop.uz/category/${slug}`}
-        />
-        <meta property="og:image" content="https://www.tailorshop.uz/Logo.png" />
-
-        {/* Category Schema */}
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
-            name: category?.name,
-            url: `https://www.tailorshop.uz/category/${slug}`,
-          })}
-        </script>
       </Helmet>
 
       <div className="max-w-7xl mx-auto px-4 py-10 pb-32">
@@ -136,7 +112,7 @@ const CategoryDetail = ({ addToCart, favorites, toggleFavorite }) => {
               {category.children.map((child) => (
                 <Link
                   key={child.id}
-                  to={`/category/${child.slug}`} // ✅ slug
+                  to={`/category/${child.slug}`}
                   className="bg-white border border-red-100 hover:border-red-500 rounded-[2rem] p-6 flex flex-col items-center text-center transition-all hover:shadow-xl group"
                 >
                   <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mb-3 group-hover:bg-red-600 transition-colors">
@@ -167,6 +143,10 @@ const CategoryDetail = ({ addToCart, favorites, toggleFavorite }) => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
               {products.map((product) => {
                 const isFav = favorites?.some((f) => f.id === product.id);
+                const mainImage = product.images?.[0]?.image_url || "https://geostudy.uz/img/pictures/cifvooipg_rf1.jpegx500";
+                
+                // UZS Narxini olish (price_uzs)
+                const currentPrice = product.price_uzs || 0;
 
                 return (
                   <div key={product.id} className="group flex flex-col h-full">
@@ -174,10 +154,7 @@ const CategoryDetail = ({ addToCart, favorites, toggleFavorite }) => {
                     <div className="relative aspect-[3/4] overflow-hidden rounded-[2.5rem] bg-gray-100 shadow-md">
                       <Link to={`/product/${product.id}`}>
                         <img
-                          src={
-                            product.images?.[0]?.image_url ||
-                            "https://geostudy.uz/img/pictures/cifvooipg_rf1.jpegx500"
-                          }
+                          src={mainImage}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         />
@@ -209,13 +186,19 @@ const CategoryDetail = ({ addToCart, favorites, toggleFavorite }) => {
                       </Link>
 
                       <div className="mt-auto">
+                        {/* PRICE_UZS FORMATLASH */}
                         <p className="text-red-700 font-black text-xl mb-3">
-                          {Math.round(product.price).toLocaleString()}{" "}
+                          {Number(currentPrice).toLocaleString('uz-UZ')}{" "}
                           <span className="text-xs">SO'M</span>
                         </p>
 
                         <button
-                          onClick={() => addToCart(product)}
+                          onClick={() => addToCart({
+                            ...product,
+                            price: currentPrice, // Savatga ham uzs narxini yuboramiz
+                            image: mainImage,
+                            quantity: 1
+                          })}
                           className="w-full bg-slate-900 hover:bg-red-600 text-white py-3 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-lg active:scale-95 group/btn"
                         >
                           <FaShoppingCart

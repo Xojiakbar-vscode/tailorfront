@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaStar } from "react-icons/fa6";
-import { FaCartShopping } from "react-icons/fa6";
-import { FaHeart } from "react-icons/fa6";
-import { FaRegHeart } from "react-icons/fa6";
-import { FaPercent } from "react-icons/fa6";
-
+import { FaStar, FaCartShopping, FaHeart, FaRegHeart, FaPercent } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 import { lazy, Suspense } from "react";
 
@@ -15,7 +10,7 @@ const LottiePlayer = lazy(() =>
 import dropDown from "../../assets/oG99I91tLW.json";
 
 // Image Swiper Komponenti
-const ImageSwiper = ({ images, productName  }) => {
+const ImageSwiper = ({ images, productName }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   useEffect(() => {
     if (images.length <= 1) return;
@@ -26,13 +21,13 @@ const ImageSwiper = ({ images, productName  }) => {
   }, [images.length]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden rounded-t-xl">
+    <div className="relative w-full h-full overflow-hidden rounded-t-xl bg-gray-50">
       <div 
         className="flex h-full transition-transform duration-700 ease-in-out" 
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
         {images.map((img, idx) => (
-          <img key={idx} src={img} alt={`${productName.name} - TailorShop.uz furnitura`} className="w-full h-full object-cover flex-shrink-0" loading={idx === 0 ? "eager" : "lazy"} />
+          <img key={idx} src={img} alt={`${productName} - TailorShop`} className="w-full h-full object-cover flex-shrink-0" loading={idx === 0 ? "eager" : "lazy"} />
         ))}
       </div>
       {images.length > 1 && (
@@ -46,23 +41,10 @@ const ImageSwiper = ({ images, productName  }) => {
   );
 };
 
-// Chegirmani tekshirish funksiyasi
-const isDiscountValid = (discount) => {
-  if (!discount || discount.is_active === false) return false;
-  if (discount.valid_until) {
-    const now = new Date();
-    const expiry = new Date(discount.valid_until);
-    if (expiry < now) return false;
-  }
-  return discount.percent || discount.amount;
-};
-
 const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
   const [products, setProducts] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,15 +53,17 @@ const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
           fetch("https://tailorback2025-production.up.railway.app/api/products"),
           fetch("https://tailorback2025-production.up.railway.app/api/reviews")
         ]);
-        if (!prodRes.ok || !revRes.ok) throw new Error("Ma'lumot xatosi");
         
         const prodData = await prodRes.json();
-        // Faqat yangi mahsulotlarni filtrlaymiz
-        const latestOnly = prodData.filter(product => product.is_latest === true);
-        setProducts(latestOnly.slice(0, 8)); // 8 tagacha ko'rsatish
-        setReviews(await revRes.json());
+        const revData = await revRes.json();
+
+        // 1. FAQAT is_active: true VA is_latest: true BO'LGANLARNI FILTRLASH
+        const filtered = prodData.filter(p => p.is_active === true && p.is_latest === true);
+        
+        setProducts(filtered.slice(0, 8));
+        setReviews(revData);
       } catch (err) {
-        setError(err.message);
+        console.error("Xatolik:", err);
       } finally {
         setLoading(false);
       }
@@ -89,9 +73,8 @@ const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
 
   const getProductStats = (productId) => {
     const pRev = reviews.filter(r => r.product_id === productId);
-    const count = pRev.length;
-    const avg = count > 0 ? (pRev.reduce((acc, r) => acc + r.rating, 0) / count).toFixed(1) : "5.0";
-    return { count, avg };
+    const avg = pRev.length > 0 ? (pRev.reduce((acc, r) => acc + r.rating, 0) / pRev.length).toFixed(1) : "5.0";
+    return { avg };
   };
 
   if (loading) return (
@@ -118,31 +101,22 @@ const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
           const imageUrls = product.images?.map(img => img.image_url) || [];
           const { avg } = getProductStats(product.id);
           const isFavorite = favorites.some(fav => fav.id === product.id);
+          
+          // NARXNI price_uzs DAN OLISH
+          const currentPrice = Number(product.price_uzs) || 0;
           const discount = product.discount;
-          const hasDiscount = isDiscountValid(discount);
-
-          let currentPrice = parseFloat(product.price);
-          if (hasDiscount) {
-            if (discount.percent) {
-              currentPrice = currentPrice * (1 - parseFloat(discount.percent) / 100);
-            } else if (discount.amount) {
-              currentPrice = Math.max(0, currentPrice - parseFloat(discount.amount));
-            }
-          }
+          const hasDiscount = discount && discount.is_active !== false;
 
           return (
-            <div key={product.id} className="group bg-white rounded-2xl border border-red-100 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col relative overflow-hidden">
+            <div key={product.id} className="group bg-white rounded-2xl border border-red-50 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col relative overflow-hidden">
               <div className="h-40 sm:h-60 lg:h-72 relative">
                 <Link to={`/product/${product.id}`} className="w-full h-full block">
                   <ImageSwiper images={imageUrls.length > 0 ? imageUrls : ["https://geostudy.uz/img/pictures/cifvooipg_rf1.jpeg"]} productName={product.name}/>
                 </Link>
 
-                {/* Sevimli (Like) tugmasi - REAL TIME */}
                 <button
-                aria-label={isFavorite ? "Sevimlilardan olib tashlash" : "Sevimlilarga qo‘shish"}
-  title={isFavorite ? "Sevimlilardan olib tashlash" : "Sevimlilarga qo‘shish"}
                   onClick={() => toggleFavorite(product)}
-                  className={`absolute top-3 right-3 p-2 backdrop-blur-sm rounded-full z-10 shadow-md transition-all active:scale-90 hover:scale-110 ${
+                  className={`absolute top-3 right-3 p-2 backdrop-blur-sm rounded-full z-10 shadow-md transition-all active:scale-90 ${
                     isFavorite ? "bg-red-500 text-white" : "bg-white/80 text-red-400"
                   }`}
                 >
@@ -151,9 +125,9 @@ const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
 
                 {hasDiscount && (
                   <div className="absolute top-3 left-3 z-10">
-                    <span className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse">
+                    <span className="bg-red-600 text-white text-[9px] font-black px-2 py-1 rounded shadow-sm flex items-center gap-1 animate-pulse">
                       <FaPercent size={7} />
-                      {discount.percent ? `${Math.round(discount.percent)}%` : `-${Number(discount.amount).toLocaleString()}`}
+                      {discount.percent ? `${Math.round(discount.percent)}%` : 'SALE'}
                     </span>
                   </div>
                 )}
@@ -161,26 +135,21 @@ const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
 
               <div className="p-3 sm:p-5 flex flex-col flex-grow">
                 <Link to={`/product/${product.id}`}>
-                  <h3 className="text-sm sm:text-lg font-bold text-red-800 line-clamp-1 hover:text-red-600 transition uppercase italic">{product.name}</h3>
+                  <h3 className="text-sm sm:text-lg font-bold text-slate-800 line-clamp-1 hover:text-red-600 transition uppercase italic">{product.name}</h3>
                 </Link>
                 
                 <div className="flex items-center gap-1 my-2">
                   <div className="flex text-yellow-400 text-[10px] sm:text-xs">
-                    {[...Array(5)].map((_, i) => <FaStar key={i} className={i < Math.round(avg) ? "text-yellow-400" : "text-red-200"} />)}
+                    {[...Array(5)].map((_, i) => <FaStar key={i} className={i < Math.round(avg) ? "text-yellow-400" : "text-gray-200"} />)}
                   </div>
-                  <span className="text-red-700 text-[10px] font-bold">({avg})</span>
+                  <span className="text-gray-400 text-[10px] font-bold">({avg})</span>
                 </div>
 
                 <div className="mt-auto">
                   <div className="flex flex-col mb-4">
                     <span className="text-red-600 font-black text-base sm:text-xl">
-                      {currentPrice.toLocaleString()} so'm
+                      {currentPrice.toLocaleString()} <small className="text-[10px]">UZS</small>
                     </span>
-                    {hasDiscount && (
-                      <span className="text-slate-600 text-[10px] line-through decoration-slate-400">
-                        {parseFloat(product.price).toLocaleString()} so'm
-                      </span>
-                    )}
                   </div>
 
                   <button
@@ -190,7 +159,7 @@ const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
                       image: imageUrls[0],
                       quantity: 1
                     })}
-                    className="w-full bg-red-900 text-white py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-red-600 active:scale-95 transition-all font-black text-[10px] uppercase tracking-widest shadow-md"
+                    className="w-full bg-slate-900 text-white py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-red-600 active:scale-95 transition-all font-black text-[10px] uppercase tracking-widest shadow-md"
                   >
                     <FaCartShopping /> SAVATGA
                   </button>
@@ -202,16 +171,10 @@ const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
       </div>
 
       <div className="mt-20 flex flex-col items-center">
-        <Link to="/" className="group">
-          <Suspense fallback={null}>
-  <LottiePlayer
-    autoplay
-    loop
-    src={dropDown}
-    className="w-32 sm:w-44 transition-transform group-hover:scale-110"
-  />
-</Suspense>
-
+        <Link to="/all-products" className="group flex flex-col items-center">
+          <Suspense fallback={<div className="h-32 w-32" />}>
+            <LottiePlayer autoplay loop src={dropDown} className="w-32 sm:w-44 transition-transform group-hover:scale-110" />
+          </Suspense>
           <p className="text-center text-red-700 font-black uppercase tracking-widest text-xs -mt-5">Barchasini ko'rish</p>
         </Link>
       </div>
