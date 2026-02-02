@@ -4,26 +4,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaSearch } from "react-icons/fa";
 import { CiGrid41 } from "react-icons/ci";
 
-// Rasmlar
-import TailorLogo from "../../images/TailorLogo.png";
+// Rasmlar (Yo'llarni tekshirib oling)
+import TailorLogo from "../../assets/img1.svg"; 
 import Like from "../../images/Live.png";
 import Savat from "../../images/Savat.png";
 
-/* 🧊 iOS uslubidagi yumshoq animatsiya */
 const iosBounce = {
   type: "spring",
-  stiffness: 420,
-  damping: 22,
-  mass: 0.7,
+  stiffness: 400,
+  damping: 30,
 };
 
 const Header = ({ cartItems = [], favorites = [] }) => {
   const location = useLocation();
 
-  const cartCount = cartItems.reduce(
-    (t, i) => t + (i.quantity || 1),
-    0
-  );
+  const cartCount = cartItems.reduce((t, i) => t + (i.quantity || 1), 0);
   const favoriteCount = favorites.length;
 
   const itemsLeft = [
@@ -37,7 +32,7 @@ const Header = ({ cartItems = [], favorites = [] }) => {
       id: "favorites",
       label: "Like",
       path: "/favorites",
-      icon: <img src={Like} alt="Sevimlilar" className="w-6 h-6" />,
+      icon: <img src={Like} alt="Like" className="w-6 h-6 object-contain" />,
       badge: favoriteCount,
     },
   ];
@@ -53,7 +48,7 @@ const Header = ({ cartItems = [], favorites = [] }) => {
       id: "cart",
       label: "Savat",
       path: "/cart",
-      icon: <img src={Savat} alt="Savat" className="w-7 h-7" />,
+      icon: <img src={Savat} alt="Savat" className="w-7 h-7 object-contain" />,
       badge: cartCount,
     },
   ];
@@ -62,57 +57,39 @@ const Header = ({ cartItems = [], favorites = [] }) => {
     const isActive = location.pathname === item.path;
 
     return (
-      <Link to={item.path} className="relative no-underline">
+      <Link to={item.path} className="relative group no-underline">
         <motion.div
-          whileHover={{ y: -3 }}
-          whileTap={{ scale: 0.9 }}
-          animate={{
-            scale: isActive ? [1, 1.12, 0.98, 1] : 1,
-            y: isActive ? [0, -6, 3, 0] : 0,
-          }}
-          transition={iosBounce}
-          className={`relative flex flex-col items-center ${
-            isActive ? "text-red-600" : "text-red-400"
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.95 }}
+          className={`flex flex-col items-center transition-colors duration-300 ${
+            isActive ? "text-red-600" : "text-slate-700 hover:text-red-500"
           }`}
         >
-          {/* ICON + ACTIVE PILL */}
           <div className="relative w-11 h-11 flex items-center justify-center">
-            <AnimatePresence>
-              {isActive && (
-                <motion.div
-                  layoutId="header-active-pill"
-                  className="absolute inset-0 rounded-full bg-red-100/80"
-                  transition={iosBounce}
-                />
-              )}
-            </AnimatePresence>
-
+            {isActive && (
+              <motion.div
+                layoutId="nav-pill"
+                className="absolute inset-0 rounded-2xl bg-white/80 shadow-sm"
+                transition={iosBounce}
+              />
+            )}
             <span className="relative z-10">{item.icon}</span>
 
-            {/* BADGE */}
+            {/* Badge */}
             <AnimatePresence>
               {item.badge > 0 && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   exit={{ scale: 0 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 600,
-                    damping: 18,
-                  }}
-                  className="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-black min-w-[16px] h-[16px] flex items-center justify-center rounded-full ring-2 ring-white"
+                  className="absolute -top-0.5 -right-0.5 bg-red-600 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full border-2 border-white z-20"
                 >
-                  {item.badge > 99 ? "99+" : item.badge}
+                  {item.badge > 99 ? "9" : item.badge}
                 </motion.span>
               )}
             </AnimatePresence>
           </div>
-
-          {/* LABEL */}
-          <span className="text-[10px] font-black uppercase mt-1 text-slate-800">
-
-
+          <span className="text-[10px] font-bold uppercase tracking-widest mt-0.5">
             {item.label}
           </span>
         </motion.div>
@@ -121,39 +98,46 @@ const Header = ({ cartItems = [], favorites = [] }) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full">
-      {/* GLASS BAR */}
-      <div className="bg-white border-b border-slate-200 border-b border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.06)] py-2">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between relative h-12 lg:h-16">
+    <header className="fixed top-0 left-0 w-full z-[100]">
+      {/* 🧊 Ultra Glass Container */}
+      <div className="
+        w-full
+        backdrop-blur-xl 
+        bg-white/40 
+        border-b border-white/20 
+        shadow-[0_2px_20px_rgba(0,0,0,0.02)]
+      ">
+        <div className="max-w-[1440px] mx-auto px-6">
+          <div className="flex items-center justify-between h-16 lg:h-24">
 
-            {/* LEFT (desktop) */}
-            <div className="hidden lg:flex items-center gap-8">
+            {/* LEFT SECTION - 1024px dan pastda butunlay yo'qoladi */}
+            <div className="hidden lg:flex items-center gap-10 flex-1">
               {itemsLeft.map((item) => (
                 <NavItem key={item.id} item={item} />
               ))}
             </div>
 
-            {/* CENTER LOGO */}
-            <Link
-              to="/yana"
-              className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0"
-            >
-              <motion.img
-                src={TailorLogo}
-                alt="TailorShop.uz logotipi"
-                whileHover={{ scale: 1.05 }}
-                transition={iosBounce}
-                className="h-9 sm:h-11 lg:h-12 object-contain drop-shadow-sm"
-              />
-            </Link>
+            {/* LOGO - Har doim markazda (Mobil va Desktopda) */}
+            <div className="flex justify-center flex-1 lg:flex-none">
+              <Link to="/">
+                <motion.img
+                  src={TailorLogo}
+                  alt="TailorShop Logo"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.04 }}
+                  className="h-10 sm:h-12 lg:h-16 w-auto object-contain filter drop-shadow-sm"
+                />
+              </Link>
+            </div>
 
-            {/* RIGHT (desktop) */}
-            <div className="hidden lg:flex items-center gap-8">
+            {/* RIGHT SECTION - 1024px dan pastda butunlay yo'qoladi */}
+            <div className="hidden lg:flex items-center justify-end gap-10 flex-1">
               {itemsRight.map((item) => (
                 <NavItem key={item.id} item={item} />
               ))}
             </div>
+
           </div>
         </div>
       </div>

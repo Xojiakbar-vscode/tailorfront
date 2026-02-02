@@ -10,86 +10,100 @@ import {
   AiOutlineInfoCircle,
 } from "react-icons/ai";
 
-/* 📱 Mobilga mos yumshoq bounce */
+/* 📱 iOS uslubidagi yumshoq animatsiya */
 const iosBounce = {
   type: "spring",
-  stiffness: 420,
-  damping: 22,
-  mass: 0.7,
+  stiffness: 400,
+  damping: 25,
 };
 
 const FooterNavbar = ({ cartItems = [], favorites = [] }) => {
   const location = useLocation();
 
-  const cartCount = cartItems.reduce(
-    (t, i) => t + (i.quantity || 1),
-    0
-  );
+  const cartCount = cartItems.reduce((t, i) => t + (i.quantity || 1), 0);
   const favoriteCount = favorites.length;
 
   const navItems = [
     { id: 1, label: "Home", icon: <AiOutlineHome />, path: "/" },
-    { id: 2, label: "About", icon: <AiOutlineInfoCircle />, path: "/yana" },
-    { id: 3, label: "Katalog", icon: <AiOutlineAppstore />, path: "/catalog" },
-    { id: 4, label: "Search", icon: <AiOutlineSearch />, path: "/search" },
-    { id: 5, label: "Like", icon: <AiOutlineHeart />, path: "/favorites", badge: favoriteCount },
-    { id: 6, label: "Cart", icon: <AiOutlineShoppingCart />, path: "/cart", badge: cartCount },
+    { id: 2, label: "Catalog", icon: <AiOutlineAppstore />, path: "/catalog" },
+    { id: 3, label: "Search", icon: <AiOutlineSearch />, path: "/search" },
+    { id: 4, label: "Like", icon: <AiOutlineHeart />, path: "/favorites", badge: favoriteCount },
+    { id: 5, label: "Cart", icon: <AiOutlineShoppingCart />, path: "/cart", badge: cartCount },
+    { id: 6, label: "Yana", icon: <AiOutlineInfoCircle />, path: "/yana" },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[60] lg:hidden">
-      <div className="mx-2 mb-2 rounded-[2.2rem] bg-white/80 backdrop-blur-xl border border-white/60 shadow-[0_-10px_25px_rgba(0,0,0,0.12)] px-1.5 py-2">
-        <div className="flex justify-around items-center">
+    <nav className="fixed bottom-0 left-0 right-0 z-[100] lg:hidden">
+      {/* 🧊 Glassmorphism bar */}
+      <div className="
+        mx-3 mb-4 
+        rounded-[2rem] 
+        backdrop-blur-2xl 
+        bg-white/50 
+        border border-white/40 
+        shadow-[0_10px_40px_rgba(0,0,0,0.1)] 
+        px-2 py-3
+      ">
+        <div className="flex justify-around items-end">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
 
             return (
-              <Link key={item.id} to={item.path} className="relative">
+              <Link key={item.id} to={item.path} className="relative flex-1 no-underline">
                 <motion.div
-                  whileTap={{ scale: 0.85, y: 6 }}   // kamroq cho‘kish
-                  animate={{
-                    scale: isActive ? [1, 1.12, 0.98, 1] : 1,
-                    y: isActive ? [0, -6, 3, 0] : 0,
-                  }}
-                  transition={iosBounce}
-                  className={`flex flex-col items-center ${
-                    isActive ? "text-red-600" : "text-gray-400"
+                  whileTap={{ scale: 0.9 }}
+                  className={`flex flex-col items-center justify-center transition-colors duration-300 ${
+                    isActive ? "text-red-600" : "text-slate-500"
                   }`}
                 >
-                  {/* ICON + PILL */}
-                  <div className="relative flex items-center justify-center w-12 h-12">
+                  {/* Active Indicator (Tepadagi chiziqcha) */}
+                  <AnimatePresence>
+                    {isActive && (
+                      <motion.div
+                        layoutId="active-dot"
+                        className="absolute -top-1 w-1 h-1 rounded-full bg-red-600"
+                        transition={iosBounce}
+                      />
+                    )}
+                  </AnimatePresence>
+
+                  {/* Icon Area */}
+                  <div className="relative flex items-center justify-center w-10 h-10">
                     <AnimatePresence>
                       {isActive && (
                         <motion.div
-                          layoutId="active-pill"
-                          className="absolute inset-0 rounded-full bg-red-100/80"
+                          layoutId="footer-pill"
+                          className="absolute inset-0 rounded-2xl bg-red-50"
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.5 }}
                           transition={iosBounce}
                         />
                       )}
                     </AnimatePresence>
 
-                    <span className="relative z-10 text-[22px]">
+                    <span className={`relative z-10 text-[24px] ${isActive ? "drop-shadow-sm" : ""}`}>
                       {item.icon}
                     </span>
 
-                    {/* BADGE */}
+                    {/* Badge */}
                     <AnimatePresence>
                       {item.badge > 0 && (
                         <motion.span
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          exit={{ scale: 0 }}
-                          transition={{ type: "spring", stiffness: 600, damping: 20 }}
-                          className="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-bold min-w-[16px] h-[16px] flex items-center justify-center rounded-full ring-2 ring-white"
+                          initial={{ scale: 0, y: 5 }}
+                          animate={{ scale: 1, y: 0 }}
+                          className="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-black min-w-[17px] h-[17px] flex items-center justify-center rounded-full border-2 border-white shadow-sm z-20"
                         >
-                          {item.badge > 99 ? "99+" : item.badge}
+                          {item.badge > 9 ? "9+" : item.badge}
                         </motion.span>
                       )}
                     </AnimatePresence>
                   </div>
 
-                  {/* LABEL */}
-                  <span className="text-[9px] font-semibold uppercase tracking-tight mt-0.5">
+                  {/* Label */}
+                  <span className={`text-[9px] font-bold uppercase tracking-tighter mt-1 transition-all ${
+                    isActive ? "opacity-100 scale-105" : "opacity-60 scale-100"
+                  }`}>
                     {item.label}
                   </span>
                 </motion.div>
