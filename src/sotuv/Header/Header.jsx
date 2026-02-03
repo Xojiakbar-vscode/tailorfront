@@ -98,7 +98,7 @@ const Header = ({ cartItems = [], favorites = [] }) => {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full z-[100]">
+    <header className="sticky top-0 left-0  w-full z-[100] ">
       {/* 🧊 Ultra Glass Container */}
       <div className="
         w-full
@@ -119,7 +119,7 @@ const Header = ({ cartItems = [], favorites = [] }) => {
 
             {/* LOGO - Har doim markazda (Mobil va Desktopda) */}
             <div className="flex justify-center flex-1 lg:flex-none">
-              <Link to="/">
+              <Link to="/yana">
                 <motion.img
                   src={TailorLogo}
                   alt="TailorShop Logo"
