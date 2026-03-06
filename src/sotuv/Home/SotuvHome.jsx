@@ -4,6 +4,8 @@ import { Helmet } from "react-helmet-async";
 import Swiper from "../Swiper/Swiper";
 import Filters from "../Filters/Filters";
 import Products from "../ProductCard/ProductCard";
+import ProductsCategory from "../ProductCard/ProductCategory";
+
 import AdBanner from "../AdBanner/AdBanner";
 
 const SotuvHome = ({ addToCart, favorites, toggleFavorite }) => {
@@ -37,11 +39,17 @@ const SotuvHome = ({ addToCart, favorites, toggleFavorite }) => {
       <div className="pb-5">
         <Swiper />
         <Filters />
+        <ProductsCategory
+        addToCart={addToCart}
+          favorites={favorites}
+          toggleFavorite={toggleFavorite}
+          />
         <Products
           addToCart={addToCart}
           favorites={favorites}
           toggleFavorite={toggleFavorite}
         />
+        
         <AdBanner />
       </div>
     </>

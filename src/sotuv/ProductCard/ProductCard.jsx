@@ -41,6 +41,9 @@ const ImageSwiper = ({ images = [], productName }) => {
             key={idx}
             src={img}
             alt={productName}
+            loading="lazy"
+            decoding="async"
+            onError={(e) => { e.target.src = "/placeholder.jpg" }}
             className="w-full h-full object-cover flex-shrink-0"
           />
         ))}
@@ -84,11 +87,10 @@ const ProductCard = ({
         {/* FAVORITE */}
         <button
           onClick={() => toggleFavorite(product)}
-          className={`absolute top-3 right-3 p-3 backdrop-blur-md rounded-2xl z-10 shadow-lg transition-all active:scale-75 ${
-            isFavorite
-              ? "bg-red-500 text-white"
-              : "bg-white/90 text-red-400 hover:bg-red-50"
-          }`}
+          className={`absolute top-3 right-3 p-3 backdrop-blur-md rounded-2xl z-10 shadow-lg transition-all active:scale-75 ${isFavorite
+            ? "bg-red-500 text-white"
+            : "bg-white/90 text-red-400 hover:bg-red-50"
+            }`}
         >
           {isFavorite ? <FaHeart size={16} /> : <FaRegHeart size={16} />}
         </button>
@@ -260,9 +262,9 @@ const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
       avg:
         pRev.length > 0
           ? (
-              pRev.reduce((a, b) => a + b.rating, 0) /
-              pRev.length
-            ).toFixed(1)
+            pRev.reduce((a, b) => a + b.rating, 0) /
+            pRev.length
+          ).toFixed(1)
           : "5.0"
     };
   };
@@ -306,15 +308,11 @@ const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
 
   return (
     <section className="max-w-7xl mx-auto px-4 py-20">
-      <ProductSection title="Katta chegirmalar" products={discounts} {...{addToCart,getStats,favorites,toggleFavorite}} />
-      <ProductSection title="Eng kop sotilganlar" products={best} {...{addToCart,getStats,favorites,toggleFavorite}} />
-      <ProductSection title="Yangi kelganlar" products={latest} {...{addToCart,getStats,favorites,toggleFavorite}} />
-      <ProductSection title="Trenddagilar" products={popular} {...{addToCart,getStats,favorites,toggleFavorite}} />
-      <ProductSection title="Tanlanganlar" products={featured} {...{addToCart,getStats,favorites,toggleFavorite}} />
-      <ProductSection title="Boshqa mahsulotlar" products={others} {...{addToCart,getStats,favorites,toggleFavorite}} />
-
-
-      <div className="mt-16 flex flex-col items-center"> <Link to="/all-products" className="group relative flex flex-col items-center transition-transform active:scale-95"> <Player autoplay loop src={dropDown} className="w-36 sm:w-44" /> <span className="bg-slate-950 text-white px-10 py-4 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl -mt-8 z-10 transition-all group-hover:bg-red-600 group-hover:shadow-red-200"> Katalogga o'tish </span> </Link> </div>
+      <ProductSection title="Katta chegirmalar" products={discounts} {...{ addToCart, getStats, favorites, toggleFavorite }} />
+      <ProductSection title="Eng kop sotilganlar" products={best} {...{ addToCart, getStats, favorites, toggleFavorite }} />
+      <ProductSection title="Yangi kelganlar" products={latest} {...{ addToCart, getStats, favorites, toggleFavorite }} />
+      <ProductSection title="Trenddagilar" products={popular} {...{ addToCart, getStats, favorites, toggleFavorite }} />
+      <ProductSection title="Tanlanganlar" products={featured} {...{ addToCart, getStats, favorites, toggleFavorite }} />
     </section>
   );
 };

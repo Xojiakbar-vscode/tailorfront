@@ -4,6 +4,8 @@ import { Helmet } from "react-helmet-async";
 import HomeNav from "../HomeNav/HomeNav";
 import About from "../About/About";
 import ProductCards from "../ProductCard/ProductCard";
+import ProductsCategory from "../../sotuv/ProductCard/ProductCategory";
+
 import Footer from "../Footer/Footer";
 
 const Home = ({ addToCart, favorites, toggleFavorite }) => {
@@ -36,11 +38,16 @@ const Home = ({ addToCart, favorites, toggleFavorite }) => {
       {/* UI */}
       <HomeNav />
       <About />
-      <ProductCards
-        addToCart={addToCart}
+      <ProductsCategory
+      addToCart={addToCart}
         favorites={favorites}
         toggleFavorite={toggleFavorite}
       />
+      {/* <ProductCards
+        addToCart={addToCart}
+        favorites={favorites}
+        toggleFavorite={toggleFavorite}
+      /> */}
       <Footer />
     </>
   );

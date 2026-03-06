@@ -1,47 +1,279 @@
+/* Filters.css */
+
 .filters-container {
-  width: 95%;
-  max-width: 1300px;
-  margin: 2rem auto;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1rem;
+  position: relative;
+  background: white;
+  border-radius: 3rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
-/* 5 tadan kam bo'lganda ishlaydi */
-.filters-flex {
+.filters-container.loading,
+.filters-container.error {
+  min-height: 60px;
   display: flex;
-  gap: 1rem;
+  align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
-  align-items: center;
 }
 
-.filter-btn {
-  display: flex;
-  align-items: center;
-  background-color: #f0f0f0;
-  border-radius: 50px;
-  gap: 10px;
-  border: none;
-  padding: 0.6rem 2rem;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #333;
+/* Swiper wrapper container */
+.swiper-wrapper-container {
+  position: relative;
+  padding: 0 2rem;
+}
+
+/* Custom Swiper styles */
+.categories-swiper {
+  width: 100%;
+  height: 100%;
+  padding: 0.5rem 0 !important;
+}
+
+.categories-swiper .swiper-slide {
+  width: auto;
+  height: auto;
   transition: all 0.3s ease;
-  white-space: nowrap; /* Matn pastga tushib ketmasligi uchun */
+}
+
+/* Filter button styles */
+.filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  border-radius: 2rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.filter-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
 }
 
 .filter-btn:hover {
-  background-color: #b91c1c;
+  border-color: #ef4444;
+  color: #ef4444;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -4px rgba(239, 68, 68, 0.15);
+}
+
+.filter-btn.active {
+  background: #ef4444;
+  border-color: #ef4444;
   color: white;
   transform: translateY(-2px);
+  box-shadow: 0 8px 16px -4px rgba(239, 68, 68, 0.25);
+}
+
+.filter-btn.active::before {
+  opacity: 1;
 }
 
 .filter-btn img {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
 }
 
-/* Swiper ichidagi tugmalar uchun maxsus */
-.mySwiper {
-  padding: 10px 0;
+.filter-btn:hover img {
+  transform: scale(1.1);
+}
+
+.filter-btn .filter-name {
+  position: relative;
+  z-index: 1;
+}
+
+/* Flex layout for non-swiper view */
+.filters-flex {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+/* Navigation buttons */
+.swiper-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.swiper-nav-btn:hover:not(.swiper-button-disabled) {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: white;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
+}
+
+.swiper-nav-btn.swiper-button-disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.swiper-nav-prev {
+  left: -10px;
+}
+
+.swiper-nav-next {
+  right: -10px;
+}
+
+/* Active indicator dot */
+.filter-btn .absolute {
+  transition: all 0.3s ease;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .filters-container {
+    padding: 0.75rem 0.5rem;
+    border-radius: 2rem;
+  }
+
+  .swiper-wrapper-container {
+    padding: 0 1.5rem;
+  }
+
+  .filter-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  .filter-btn img {
+    width: 18px;
+    height: 18px;
+  }
+
+  .swiper-nav-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  .swiper-nav-prev {
+    left: -5px;
+  }
+
+  .swiper-nav-next {
+    right: -5px;
+  }
+
+  .filters-flex {
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.7rem;
+  }
+
+  .filter-btn img {
+    width: 16px;
+    height: 16px;
+  }
+
+  .swiper-wrapper-container {
+    padding: 0 1rem;
+  }
+
+  .swiper-nav-btn {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .filters-container {
+    background: #1f2937;
+  }
+
+  .filter-btn {
+    border-color: #374151;
+    color: #9ca3af;
+  }
+
+  .filter-btn:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  .filter-btn.active {
+    background: #ef4444;
+    color: white;
+  }
+
+  .swiper-nav-btn {
+    background: #374151;
+    border-color: #4b5563;
+    color: #e5e7eb;
+  }
+}
+
+/* Animation */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filters-container[data-aos="fade-up"] {
+  animation: slideUp 0.6s ease-out;
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .filter-btn {
+    padding: 0.7rem 1.2rem;
+  }
+
+  .filter-btn:hover {
+    transform: none;
+  }
 }
