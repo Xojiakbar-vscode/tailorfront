@@ -48,7 +48,7 @@ const Home = ({ addToCart, favorites, toggleFavorite }) => {
         favorites={favorites}
         toggleFavorite={toggleFavorite}
       /> */}
-      <Footer />
+      {/* <Footer /> */}
     </>
   );
 };

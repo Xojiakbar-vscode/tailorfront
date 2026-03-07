@@ -7,6 +7,7 @@ import Products from "../ProductCard/ProductCard";
 import ProductsCategory from "../ProductCard/ProductCategory";
 
 import AdBanner from "../AdBanner/AdBanner";
+import Footer from "../Footer/Footer";
 
 const SotuvHome = ({ addToCart, favorites, toggleFavorite }) => {
   return (
@@ -51,6 +52,7 @@ const SotuvHome = ({ addToCart, favorites, toggleFavorite }) => {
         />
         
         <AdBanner />
+    
       </div>
     </>
   );

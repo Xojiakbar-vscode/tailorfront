@@ -1,15 +1,16 @@
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense, useCallback, useMemo } from "react";
+import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ScrollToTop from "../ScrollToTop";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import FooterNavbar from "./sotuv/FooterNavbar/FooterNavbar";
-import AllProducts from "./sotuv/ProductCard/AllProducts"
-// TOAST IMPORT
+import AllProducts from "./sotuv/ProductCard/AllProducts";
 import { Toaster, toast } from "react-hot-toast";
 import Header from "./sotuv/Header/Header";
+import ErrorBoundary from "./components/ErrorBoundary/ErrorBoundary";
 
-// Lazy imports
+// Lazy imports with preloading
 const Home = lazy(() => import("./components/Home/Home"));
 const SotuvHome = lazy(() => import("./sotuv/Home/SotuvHome"));
 const Catalog = lazy(() => import("./sotuv/Catalog/Catalog"));
@@ -18,18 +19,40 @@ const ProductDetail = lazy(() => import("./components/ProductCard/ProductDetail"
 const CategoryDetail = lazy(() => import("./sotuv/Filters/FilterDetail"));
 const Favorites = lazy(() => import("./sotuv/Favorites/Favorites"));
 const SearchPage = lazy(() => import("./sotuv/Search/SearchPage"));
+const Footer =lazy(()=> import("./sotuv/Footer/Footer"))
+// Loading component
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+    <div className="relative">
+      <div className="w-16 h-16 border-4 border-red-100 border-t-red-600 rounded-full animate-spin"></div>
+    </div>
+    <p className="mt-4 text-gray-400 text-sm font-medium animate-pulse">
+      Yuklanmoqda...
+    </p>
+  </div>
+);
 
 const App = () => {
+  // State with lazy initialization
   const [cartItems, setCartItems] = useState(() => {
-    const saved = localStorage.getItem("cart");
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem("cart");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
   });
 
   const [favorites, setFavorites] = useState(() => {
-    const saved = localStorage.getItem("favorites");
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem("favorites");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
   });
 
+  // Persist to localStorage
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cartItems));
   }, [cartItems]);
@@ -38,119 +61,264 @@ const App = () => {
     localStorage.setItem("favorites", JSON.stringify(favorites));
   }, [favorites]);
 
+  // Initialize AOS
   useEffect(() => {
-    AOS.init({ duration: 1000, once: true });
+    AOS.init({ 
+      duration: 800, 
+      once: true,
+      offset: 100,
+      easing: 'ease-out-cubic'
+    });
   }, []);
 
-  // --- SAVATGA QO'SHISH (TOAST BILAN) ---
-  const addToCart = (product) => {
+  // Toast styles
+  const toastStyles = useMemo(() => ({
+    success: {
+      duration: 2000,
+      position: 'top-center',
+      style: {
+        background: '#10B981',
+        color: '#fff',
+        fontWeight: '600',
+        borderRadius: '12px',
+        fontSize: '14px',
+        padding: '12px 20px',
+        boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.3)'
+      },
+      iconTheme: {
+        primary: '#fff',
+        secondary: '#10B981',
+      },
+    },
+    error: {
+      duration: 2000,
+      position: 'top-center',
+      style: {
+        background: '#EF4444',
+        color: '#fff',
+        fontWeight: '600',
+        borderRadius: '12px',
+        fontSize: '14px',
+        padding: '12px 20px',
+        boxShadow: '0 10px 25px -5px rgba(239, 68, 68, 0.3)'
+      },
+    },
+    favoriteAdd: {
+      duration: 2000,
+      position: 'top-center',
+      style: {
+        background: '#059669',
+        color: '#fff',
+        fontWeight: '600',
+        borderRadius: '12px',
+        fontSize: '14px',
+        padding: '12px 20px',
+        boxShadow: '0 10px 25px -5px rgba(5, 150, 105, 0.3)'
+      },
+    }
+  }), []);
+
+  // Add to cart handler
+  const addToCart = useCallback((product) => {
+    if (!product?.id) return;
+
     setCartItems((prev) => {
       const exist = prev.find((item) => item.id === product.id);
 
-      // Chiroyli Yashil Toast
-      toast.success(`${product.name} savatga qo'shildi!`, {
-        duration: 2000,
-        position: 'top-center',
-        style: {
-          background: '#10B981',
-          color: '#fff',
-          fontWeight: 'bold',
-          borderRadius: '12px',
-          fontSize: '14px'
-        },
-        iconTheme: {
-          primary: '#fff',
-          secondary: '#10B981',
-        },
-      });
+      toast.success(
+        `${product.name.slice(0, 30)}${product.name.length > 30 ? '...' : ''} savatga qo'shildi!`,
+        toastStyles.success
+      );
 
       if (exist) {
         return prev.map((item) =>
-          item.id === product.id ? { ...item, quantity: (item.quantity || 1) + 1 } : item
+          item.id === product.id 
+            ? { ...item, quantity: (item.quantity || 1) + 1 } 
+            : item
         );
       }
       return [...prev, { ...product, quantity: 1 }];
     });
-  };
+  }, [toastStyles]);
 
-  // --- SEVIMLILARGA QO'SHISH/O'CHIRISH (TOAST BILAN) ---
-  const toggleFavorite = (product) => {
+  // Toggle favorite handler
+  const toggleFavorite = useCallback((product) => {
+    if (!product?.id) return;
+
     setFavorites((prev) => {
       const isExist = prev.find((item) => item.id === product.id);
 
       if (isExist) {
-        // Qizil Toast - Olib tashlanganda
-        toast.error("Sevimlilardan olib tashlandi", {
-          duration: 2000,
-          position: 'top-center',
-          style: {
-            background: '#EF4444',
-            color: '#fff',
-            fontWeight: 'bold',
-            borderRadius: '12px',
-            fontSize: '14px'
-          },
-        });
+        toast.error("Sevimlilardan olib tashlandi", toastStyles.error);
         return prev.filter((item) => item.id !== product.id);
       } else {
-        // Yashil Toast - Qo'shilganda
-        toast.success("Sevimlilarga qo'shildi!", {
-          duration: 2000,
-          position: 'top-center',
-          style: {
-            background: '#059669',
-            color: '#fff',
-            fontWeight: 'bold',
-            borderRadius: '12px',
-            fontSize: '14px'
-          },
-        });
+        toast.success("Sevimlilarga qo'shildi!", toastStyles.favoriteAdd);
         return [...prev, product];
       }
     });
-  };
+  }, [toastStyles]);
+
+  // Clear cart handler
+  const clearCart = useCallback(() => {
+    setCartItems([]);
+    toast.success("Savat tozalandi", toastStyles.success);
+  }, [toastStyles]);
+
+  // Remove from cart handler
+  const removeFromCart = useCallback((productId) => {
+    setCartItems(prev => prev.filter(item => item.id !== productId));
+    toast.success("Mahsulot savatdan olib tashlandi", toastStyles.success);
+  }, [toastStyles]);
+
+  // Update quantity handler
+  const updateQuantity = useCallback((productId, newQuantity) => {
+    if (newQuantity < 1) {
+      removeFromCart(productId);
+      return;
+    }
+
+    setCartItems(prev =>
+      prev.map(item =>
+        item.id === productId
+          ? { ...item, quantity: newQuantity }
+          : item
+      )
+    );
+  }, [removeFromCart]);
 
   return (
-    <Router>
-      {/* TOASTER KONTEYNERI */}
-      <Toaster reverseOrder={false} gutter={8} />
-
-      <ScrollToTop />
-      <Suspense fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="spinner-border text-danger" role="status">
-            <span className="visually-hidden">Yuklanmoqda...</span>
-          </div>
-        </div>
-      }>
-        <Header
-          cartItems={cartItems}
-          favorites={favorites}
-
+    <ErrorBoundary>
+      <Router>
+        {/* Toaster container */}
+        <Toaster 
+          reverseOrder={false} 
+          gutter={8}
+          containerStyle={{
+            top: 20,
+            left: 20,
+            bottom: 20,
+            right: 20,
+          }}
         />
-        <Routes>
 
-          <Route path="/" element={<SotuvHome addToCart={addToCart} cartItems={cartItems} favorites={favorites} toggleFavorite={toggleFavorite} />} />
-          <Route path="/yana" element={<Home addToCart={addToCart} favorites={favorites} toggleFavorite={toggleFavorite} />} />
-          <Route path="/search" element={<SearchPage favorites={favorites} toggleFavorite={toggleFavorite} addToCart={addToCart} />} />
-          <Route path="/catalog" element={<Catalog />} />
-          <Route path="/cart" element={<Cart cartItems={cartItems} setCartItems={setCartItems} />} />
-          <Route path="/favorites" element={<Favorites favorites={favorites} toggleFavorite={toggleFavorite} addToCart={addToCart} />} />
-          <Route path="/product/:id" element={<ProductDetail addToCart={addToCart} toggleFavorite={toggleFavorite} favorites={favorites} />} />
-          <Route path="/all-products" element={<AllProducts
-            addToCart={addToCart}
+        <ScrollToTop />
+        
+        <Suspense fallback={<LoadingSpinner />}>
+          <Header
+            cartItems={cartItems}
             favorites={favorites}
-            toggleFavorite={toggleFavorite}
-          />} />
-          <Route
-            path="/category/:slug"
-            element={<CategoryDetail addToCart={addToCart} favorites={favorites} toggleFavorite={toggleFavorite} />}
+            cartCount={cartItems.reduce((total, item) => total + (item.quantity || 1), 0)}
+            favoritesCount={favorites.length}
           />
-        </Routes>
-        <FooterNavbar cartItems={cartItems} favorites={favorites} className="navbarfooter" />
-      </Suspense>
-    </Router>
+          
+          <Routes>
+            <Route 
+              path="/" 
+              element={
+                <SotuvHome 
+                  addToCart={addToCart} 
+                  cartItems={cartItems} 
+                  favorites={favorites} 
+                  toggleFavorite={toggleFavorite} 
+                />
+              } 
+            />
+            
+            <Route 
+              path="/yana" 
+              element={
+                <Home 
+                  addToCart={addToCart} 
+                  favorites={favorites} 
+                  toggleFavorite={toggleFavorite} 
+                />
+              } 
+            />
+            
+            <Route 
+              path="/search" 
+              element={
+                <SearchPage 
+                  favorites={favorites} 
+                  toggleFavorite={toggleFavorite} 
+                  addToCart={addToCart} 
+                />
+              } 
+            />
+            
+            <Route path="/catalog" element={<Catalog />} />
+            
+            <Route 
+              path="/cart" 
+              element={
+                <Cart 
+                  cartItems={cartItems} 
+                  setCartItems={setCartItems}
+                  onUpdateQuantity={updateQuantity}
+                  onRemoveItem={removeFromCart}
+                  onClearCart={clearCart}
+                />
+              } 
+            />
+            
+            <Route 
+              path="/favorites" 
+              element={
+                <Favorites 
+                  favorites={favorites} 
+                  toggleFavorite={toggleFavorite} 
+                  addToCart={addToCart} 
+                />
+              } 
+            />
+            
+            <Route 
+              path="/product/:id" 
+              element={
+                <ProductDetail 
+                  addToCart={addToCart} 
+                  toggleFavorite={toggleFavorite} 
+                  favorites={favorites} 
+                />
+              } 
+            />
+            
+            <Route 
+              path="/all-products" 
+              element={
+                <AllProducts
+                  addToCart={addToCart}
+                  favorites={favorites}
+                  toggleFavorite={toggleFavorite}
+                />
+              } 
+            />
+            
+            <Route 
+              path="/category/:slug" 
+              element={
+                <CategoryDetail 
+                  addToCart={addToCart} 
+                  favorites={favorites} 
+                  toggleFavorite={toggleFavorite} 
+                />
+              } 
+            />
+            
+            {/* 404 route */}
+            <Route path="*" element={<div>404 - Page not found</div>} />
+          </Routes>
+          
+          <FooterNavbar 
+            cartItems={cartItems} 
+            favorites={favorites} 
+            className="navbarfooter" 
+          />
+          <Footer/>
+        </Suspense>
+      </Router>
+    </ErrorBoundary>
   );
 };
 
-export default App;
+export default React.memo(App);

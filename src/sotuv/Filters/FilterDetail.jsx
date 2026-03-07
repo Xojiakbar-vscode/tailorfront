@@ -7,10 +7,14 @@ import {
   FaFilter, FaSort, FaSortAmountDown,
   FaSortAmountUp, FaSpinner, FaImage,
   FaTimes, FaChevronDown, FaChevronUp,
-  FaTags, FaList
+  FaTags, FaList, FaStar
 } from "react-icons/fa";
 
 const API_BASE = "https://tailorback2025-production.up.railway.app/api";
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Cache for API responses
+const cache = new Map();
 
 // ================= LAZY IMAGE COMPONENT =================
 const LazyImage = ({ src, alt, className, onLoad }) => {
@@ -65,6 +69,7 @@ const LazyImage = ({ src, alt, className, onLoad }) => {
           onLoad?.();
         }}
         onError={() => setError(true)}
+        loading="lazy"
       />
     </div>
   );
@@ -75,8 +80,8 @@ const ProductCard = React.memo(({ product, isFavorite, onToggleFavorite, onAddTo
   const [imageLoaded, setImageLoaded] = useState(false);
   
   const mainImage = useMemo(() => 
-    product.images?.[0]?.image_url || "/placeholder-product.jpg",
-    [product.images]
+    product.images?.[0]?.image_url || product.image || "/placeholder-product.jpg",
+    [product.images, product.image]
   );
 
   const currentPrice = useMemo(() => 
@@ -102,7 +107,7 @@ const ProductCard = React.memo(({ product, isFavorite, onToggleFavorite, onAddTo
           <LazyImage
             src={mainImage}
             alt={product.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
             onLoad={() => setImageLoaded(true)}
           />
         </Link>
@@ -124,7 +129,8 @@ const ProductCard = React.memo(({ product, isFavorite, onToggleFavorite, onAddTo
         {hasDiscount && (
           <div className="absolute top-3 left-3 z-10">
             <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-lg flex items-center gap-1">
-              <span>-{Math.round(discount.percent)}%</span>
+              <FaStar className="text-yellow-300" size={8} />
+              -{Math.round(discount.percent)}%
             </span>
           </div>
         )}
@@ -186,7 +192,7 @@ const SubcategoryCard = React.memo(({ subcategory, onClick, isActive }) => {
       onClick={() => onClick(subcategory.id)}
       className={`group flex flex-col items-center text-center p-4 rounded-xl transition-all duration-200 ${
         isActive 
-          ? 'bg-red-50 border-2 border-red-500' 
+          ? 'bg-red-50 border-2 border-red-500 shadow-lg' 
           : 'bg-white border border-gray-200 hover:border-red-300 hover:shadow-md'
       }`}
     >
@@ -214,10 +220,12 @@ const CategoryDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
   const { slug } = useParams();
   const navigate = useNavigate();
   
+  // Use refs to track if component is mounted
+  const isMounted = useRef(true);
+  
+  // State
   const [category, setCategory] = useState(null);
-  const [allCategories, setAllCategories] = useState([]);
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
@@ -236,170 +244,194 @@ const CategoryDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
   const productsPerPage = 12;
   const observerRef = useRef();
   const lastProductRef = useRef();
+  const abortControllerRef = useRef();
 
-  // Fetch all categories first
+  // Reset state when slug changes
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/categories`);
-        if (res.ok) {
-          const data = await res.json();
-          setAllCategories(Array.isArray(data) ? data : []);
-        }
-      } catch (err) {
-        console.error("Kategoriyalarni yuklashda xatolik:", err);
+    // Mark component as mounted
+    isMounted.current = true;
+    
+    // Reset all states
+    setCategory(null);
+    setProducts([]);
+    setLoading(true);
+    setError(null);
+    setSelectedSubcategory(null);
+    setSortBy('default');
+    setSortOrder('asc');
+    setPage(1);
+    setHasMore(true);
+    setTotalProducts(0);
+    
+    // Fetch new data
+    fetchCategoryData();
+    
+    // Cleanup function
+    return () => {
+      isMounted.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
     };
-    fetchCategories();
-  }, []);
-
-  // Find category by slug (supports both parent and child slugs)
-  const findCategoryBySlug = useCallback((slug, categories) => {
-    for (const cat of categories) {
-      // Check if current category matches slug
-      if (cat.slug === slug) {
-        return cat;
-      }
-      // Check children
-      if (cat.children) {
-        for (const child of cat.children) {
-          if (child.slug === slug) {
-            return child;
-          }
-        }
-      }
-    }
-    return null;
-  }, []);
-
-  // Get all child category IDs recursively
-  const getAllChildIds = useCallback((category, allCats) => {
-    if (!category) return [];
-    
-    const ids = [category.id];
-    
-    // If this category has children directly
-    if (category.children && category.children.length > 0) {
-      category.children.forEach(child => {
-        ids.push(child.id);
-        // Recursively get deeper children if any
-        const deeperIds = getAllChildIds(child, allCats);
-        ids.push(...deeperIds);
-      });
-    }
-    
-    // Also check in allCategories for children that might not be in category.children
-    if (allCats.length > 0) {
-      allCats.forEach(cat => {
-        if (cat.parent_id === category.id && !ids.includes(cat.id)) {
-          ids.push(cat.id);
-        }
-      });
-    }
-    
-    return [...new Set(ids)]; // Remove duplicates
-  }, []);
+  }, [slug]);
 
   // Fetch category data
-  useEffect(() => {
-    const fetchCategoryData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        setSelectedSubcategory(null);
-        setPage(1);
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-        // First try to get category by slug
-        const catRes = await fetch(`${API_BASE}/categories/slug/${slug}`, {
-          signal: controller.signal
-        });
-        
-        let currentCategory = null;
-        
-        if (catRes.ok) {
-          currentCategory = await catRes.json();
-        } else {
-          // If not found, search in allCategories
-          if (allCategories.length > 0) {
-            currentCategory = findCategoryBySlug(slug, allCategories);
-          }
+  const fetchCategoryData = async () => {
+    try {
+      // Abort previous request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      
+      abortControllerRef.current = new AbortController();
+      const signal = abortControllerRef.current.signal;
+      
+      setLoading(true);
+      setError(null);
+      
+      // Check cache first
+      const cacheKey = `category_${slug}`;
+      const cached = cache.get(cacheKey);
+      
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        if (isMounted.current) {
+          setCategory(cached.data.category);
+          setProducts(cached.data.products);
+          setTotalProducts(cached.data.total);
+          setHasMore(cached.data.hasMore);
+          setLoading(false);
         }
-        
-        if (!currentCategory) {
-          throw new Error("Kategoriya topilmadi");
-        }
+        return;
+      }
 
-        setCategory(currentCategory);
+      // Fetch category by slug
+      const categoryResponse = await fetch(`${API_BASE}/categories/slug/${slug}`, { signal });
+      
+      if (!categoryResponse.ok) {
+        throw new Error("Kategoriya topilmadi");
+      }
+      
+      const categoryData = await categoryResponse.json();
+      
+      if (!isMounted.current) return;
+      setCategory(categoryData);
 
-        // Get all child category IDs
-        const childIds = getAllChildIds(currentCategory, allCategories);
-        
-        // Fetch products for all these category IDs
-        const categoryIds = [currentCategory.id, ...childIds].filter((v, i, a) => a.indexOf(v) === i);
-        
-        // Build query string with all category IDs
-        const categoryQuery = categoryIds.map(id => `category_id=${id}`).join('&');
-        
-        const prodRes = await fetch(
-          `${API_BASE}/products?${categoryQuery}&page=${page}&limit=${productsPerPage}`,
-          { signal: controller.signal }
-        );
-        
-        if (!prodRes.ok) {
-          throw new Error("Mahsulotlarni olishda xatolik");
-        }
-        
-        const prodData = await prodRes.json();
-        
-        // Handle different response formats
-        const productsArray = Array.isArray(prodData) ? prodData : prodData.products || [];
-        const total = prodData.total || productsArray.length;
-        
-        // Filter only active products
-        const activeProducts = productsArray.filter(p => p.is_active === true);
-        
-        setProducts(prev => page === 1 ? activeProducts : [...prev, ...activeProducts]);
-        setFilteredProducts(prev => page === 1 ? activeProducts : [...prev, ...activeProducts]);
-        setTotalProducts(total);
-        setHasMore(activeProducts.length === productsPerPage);
+      // Determine which categories to fetch products from
+      let categoryIds = [categoryData.id];
+      
+      // If this is a parent category, include all child categories
+      if (categoryData.children && categoryData.children.length > 0) {
+        const childIds = categoryData.children.map(child => child.id);
+        categoryIds = [...categoryIds, ...childIds];
+      }
 
-        clearTimeout(timeoutId);
-      } catch (err) {
-        if (err.name === 'AbortError') {
-          setError("So'rov vaqti tugadi. Internet aloqasini tekshiring");
-        } else {
-          setError(err.message);
-        }
-        console.error("Xatolik:", err);
-      } finally {
+      // Fetch products
+      const productResponse = await fetch(
+        `${API_BASE}/products?${categoryIds.map(id => `category_id=${id}`).join('&')}&page=1&limit=${productsPerPage}`,
+        { signal }
+      );
+      
+      if (!productResponse.ok) {
+        throw new Error("Mahsulotlarni olishda xatolik");
+      }
+      
+      const productData = await productResponse.json();
+      
+      // Handle different response formats
+      const productsArray = Array.isArray(productData) ? productData : productData.products || [];
+      const total = productData.total || productsArray.length;
+      
+      // Filter only active products
+      const activeProducts = productsArray.filter(p => p.is_active === true);
+      
+      if (!isMounted.current) return;
+      
+      setProducts(activeProducts);
+      setTotalProducts(total);
+      setHasMore(activeProducts.length === productsPerPage);
+
+      // Cache the response
+      cache.set(cacheKey, {
+        data: {
+          category: categoryData,
+          products: activeProducts,
+          total,
+          hasMore: activeProducts.length === productsPerPage
+        },
+        timestamp: Date.now()
+      });
+
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      
+      if (isMounted.current) {
+        setError(err.message || "Xatolik yuz berdi");
+      }
+      console.error("Xatolik:", err);
+    } finally {
+      if (isMounted.current) {
         setLoading(false);
       }
-    };
-
-    if (slug && (allCategories.length > 0 || !loading)) {
-      fetchCategoryData();
     }
-  }, [slug, allCategories, page, findCategoryBySlug, getAllChildIds]);
+  };
+
+  // Load more products
+  const loadMoreProducts = useCallback(async () => {
+    if (loading || !hasMore || !category) return;
+    
+    try {
+      setLoading(true);
+      
+      const nextPage = page + 1;
+      
+      // Determine which categories to fetch products from
+      let categoryIds = [category.id];
+      if (category.children && category.children.length > 0) {
+        const childIds = category.children.map(child => child.id);
+        categoryIds = [...categoryIds, ...childIds];
+      }
+      
+      const response = await fetch(
+        `${API_BASE}/products?${categoryIds.map(id => `category_id=${id}`).join('&')}&page=${nextPage}&limit=${productsPerPage}`
+      );
+      
+      if (!response.ok) return;
+      
+      const data = await response.json();
+      
+      // Handle different response formats
+      const productsArray = Array.isArray(data) ? data : data.products || [];
+      const activeProducts = productsArray.filter(p => p.is_active === true);
+      
+      if (!isMounted.current) return;
+      
+      setProducts(prev => [...prev, ...activeProducts]);
+      setPage(nextPage);
+      setHasMore(activeProducts.length === productsPerPage);
+      
+    } catch (err) {
+      console.error("Yuklashda xatolik:", err);
+    } finally {
+      if (isMounted.current) {
+        setLoading(false);
+      }
+    }
+  }, [category, page, hasMore, loading, productsPerPage]);
 
   // Filter products by selected subcategory
-  useEffect(() => {
-    if (!selectedSubcategory) {
-      setFilteredProducts(products);
-    } else {
-      const filtered = products.filter(p => p.category_id === selectedSubcategory);
-      setFilteredProducts(filtered);
+  const filteredProducts = useMemo(() => {
+    if (!products.length) return [];
+    
+    let result = products;
+    
+    // Apply subcategory filter
+    if (selectedSubcategory) {
+      result = result.filter(p => p.category_id === selectedSubcategory);
     }
-  }, [selectedSubcategory, products]);
-
-  // Apply sorting
-  useEffect(() => {
-    let result = [...filteredProducts];
-
+    
+    // Apply sorting
     if (sortBy !== 'default') {
-      result.sort((a, b) => {
+      result = [...result].sort((a, b) => {
         const aVal = sortBy === 'price' 
           ? Number(a.price_uzs || a.price) || 0
           : a.name;
@@ -414,21 +446,21 @@ const CategoryDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
         }
       });
     }
-
-    setFilteredProducts(result);
+    
+    return result;
   }, [products, selectedSubcategory, sortBy, sortOrder]);
 
   // Infinite scroll observer
   useEffect(() => {
-    if (loading) return;
+    if (loading || !hasMore) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading) {
-          setPage(prev => prev + 1);
+          loadMoreProducts();
         }
       },
-      { threshold: 0.5, rootMargin: "100px" }
+      { threshold: 0.1, rootMargin: "200px" }
     );
 
     if (lastProductRef.current) {
@@ -436,15 +468,13 @@ const CategoryDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
     }
 
     return () => observer.disconnect();
-  }, [loading, hasMore]);
+  }, [loading, hasMore, loadMoreProducts]);
 
   // Get subcategories with product counts
   const subcategoriesWithCounts = useMemo(() => {
-    if (!category) return [];
+    if (!category || !category.children) return [];
     
-    const subcats = category.children || [];
-    
-    return subcats.map(sub => ({
+    return category.children.map(sub => ({
       ...sub,
       productCount: products.filter(p => p.category_id === sub.id).length
     })).filter(sub => sub.productCount > 0);
@@ -479,6 +509,7 @@ const CategoryDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
 
   const handleSubcategoryClick = useCallback((subId) => {
     setSelectedSubcategory(prev => prev === subId ? null : subId);
+    // Reset to first page when changing filter
     setPage(1);
   }, []);
 
@@ -488,7 +519,8 @@ const CategoryDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
     setSortOrder('asc');
   }, []);
 
-  if (loading && page === 1) {
+  // Loading state
+  if (loading && page === 1 && !products.length) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
         <div className="text-center">
@@ -499,7 +531,8 @@ const CategoryDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
     );
   }
 
-  if (error && !category) {
+  // Error state
+  if (error) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
@@ -523,7 +556,8 @@ const CategoryDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
     );
   }
 
-  if (!category) {
+  // Not found state
+  if (!category && !loading) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
         <div className="text-center">
@@ -540,18 +574,20 @@ const CategoryDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
     );
   }
 
-  const isParentCategory = category.children && category.children.length > 0;
+  const isParentCategory = category?.children && category.children.length > 0;
+  const displayProducts = filteredProducts;
+  const displayTotal = selectedSubcategory ? displayProducts.length : totalProducts;
 
   return (
     <>
       <Helmet>
-        <title>{category.name} | TailorShop.uz – Tikuvchilik jihozlari</title>
+        <title>{category?.name} | TailorShop.uz – Tikuvchilik jihozlari</title>
         <meta
           name="description"
-          content={`${category.name} – ${isParentCategory ? 'Barcha turdagi' : ''} tikuvchilik uchun sifatli mahsulotlar. TailorShop.uz Namangan.`}
+          content={`${category?.name} – ${isParentCategory ? 'Barcha turdagi' : ''} tikuvchilik uchun sifatli mahsulotlar. TailorShop.uz Namangan.`}
         />
-        <meta property="og:title" content={`${category.name} | TailorShop.uz`} />
-        <meta property="og:description" content={`${category.name} – Tikuvchilik uchun eng yaxshi tanlov`} />
+        <meta property="og:title" content={`${category?.name} | TailorShop.uz`} />
+        <meta property="og:description" content={`${category?.name} – Tikuvchilik uchun eng yaxshi tanlov`} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={`https://tailorshop.uz/category/${slug}`} />
         <link rel="canonical" href={`https://tailorshop.uz/category/${slug}`} />
@@ -564,7 +600,7 @@ const CategoryDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
             Bosh sahifa
           </Link>
           <span>/</span>
-          {category.parent && (
+          {category?.parent && (
             <>
               <Link to={`/category/${category.parent.slug}`} className="hover:text-red-600 transition-colors">
                 {category.parent.name}
@@ -572,7 +608,7 @@ const CategoryDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
               <span>/</span>
             </>
           )}
-          <span className="text-gray-900 font-medium">{category.name}</span>
+          <span className="text-gray-900 font-medium">{category?.name}</span>
         </nav>
 
         {/* Header */}
@@ -586,17 +622,17 @@ const CategoryDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
           </Link>
 
           <h1 className="text-3xl md:text-5xl font-black text-gray-900 leading-tight">
-            <span className="text-red-600">#</span> {category.name}
+            <span className="text-red-600">#</span> {category?.name}
           </h1>
           
-          {category.description && (
+          {category?.description && (
             <p className="mt-3 text-gray-600 max-w-2xl text-sm">{category.description}</p>
           )}
 
           {/* Total products */}
           <div className="mt-3 flex items-center gap-2">
             <span className="bg-red-600 text-white px-3 py-1 rounded-full text-[10px] font-bold">
-              {totalProducts} ta mahsulot
+              {displayTotal} ta mahsulot
             </span>
             {selectedSubcategory && (
               <button
@@ -759,13 +795,13 @@ const CategoryDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
           )}
 
           {/* Products Grid */}
-          {filteredProducts.length > 0 ? (
+          {displayProducts.length > 0 ? (
             <>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                {filteredProducts.map((product, index) => (
+                {displayProducts.map((product, index) => (
                   <div
                     key={product.id}
-                    ref={index === filteredProducts.length - 1 ? lastProductRef : null}
+                    ref={index === displayProducts.length - 1 ? lastProductRef : null}
                   >
                     <ProductCard
                       product={product}
@@ -785,7 +821,7 @@ const CategoryDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
               )}
 
               {/* No more products */}
-              {!hasMore && filteredProducts.length < totalProducts && (
+              {!hasMore && displayProducts.length < totalProducts && (
                 <p className="text-center text-gray-500 text-xs mt-6">
                   Barcha mahsulotlar ko'rsatildi
                 </p>
