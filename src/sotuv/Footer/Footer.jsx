@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  FaMapMarkerAlt, FaPhone, FaTelegram, FaInstagram, 
-  FaYoutube, FaChevronUp, FaShieldAlt, FaTruck, 
+import {
+  FaMapMarkerAlt, FaPhone, FaTelegram, FaInstagram,
+  FaYoutube, FaChevronUp, FaShieldAlt, FaTruck,
   FaHeadset, FaStar, FaFacebookF, FaClock
 } from 'react-icons/fa';
 import { IoLocationSharp } from "react-icons/io5";
@@ -57,15 +57,23 @@ const Footer = () => {
     { icon: FaHeadset, title: "Yordam", desc: "24/7 aloqadamiz", color: "text-purple-600" },
     { icon: FaStar, title: "Premium", desc: "Professional tanlov", color: "text-yellow-600" }
   ];
+  const socialLinks = [
+    { icon: FaTelegram, url: "https://t.me/tailorshopnamangan1" },
+    { icon: FaInstagram, url: "https://www.instagram.com/tailor_shop_namangan?igsh=MzRlODBiNWFlZA==" },
+    // { icon: FaYoutube, url: "https://youtube.com/@tailorshop" },
+    { icon: FaFacebookF, url: "https://www.facebook.com/profile.php?id=100086293105820" }
+  ];
 
   return (
     <footer className="bg-white text-gray-700 pt-16 border-t border-gray-100 relative">
       <AnimatePresence>
         {showBackToTop && (
           <motion.button
-            initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0 }}
             onClick={scrollToTop}
-            className="fixed bottom-6 right-6 z-50 bg-red-600 text-white p-4 rounded-full shadow-2xl hover:bg-red-700 transition-colors"
+            className="fixed bottom-36 lg:bottom-[15px] right-6 z-50 bg-red-600 text-white p-4 rounded-full shadow-2xl hover:bg-red-700 transition-colors"
           >
             <FaChevronUp size={20} />
           </motion.button>
@@ -94,11 +102,21 @@ const Footer = () => {
               Professional tikuvchilik mahsulotlari va butlovchi qismlari yetkazib beruvchi yetakchi do'kon. Sifat va ishonch kafolati.
             </p>
             <div className="flex gap-3">
-              {[FaTelegram, FaInstagram, FaYoutube, FaFacebookF].map((Icon, i) => (
-                <a key={i} href="#" className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-red-600 hover:text-white transition-all">
-                  <Icon size={18} />
-                </a>
-              ))}
+              {socialLinks.map((item, i) => {
+                const Icon = item.icon;
+
+                return (
+                  <a
+                    key={i}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-red-600 hover:text-white transition-all"
+                  >
+                    <Icon size={18} />
+                  </a>
+                );
+              })}
             </div>
           </div>
 
@@ -138,24 +156,24 @@ const Footer = () => {
 
         {/* 3. Map Section */}
         <div className="w-full h-[250px] rounded-3xl overflow-hidden mb-12 border border-gray-100 relative">
-           {!showMap ? (
-              <div className="absolute inset-0 bg-gray-900 flex flex-col items-center justify-center text-white p-4">
-                <IoLocationSharp className="text-red-500 text-5xl mb-4 animate-bounce" />
-                <button 
-                  onClick={() => setShowMap(true)}
-                  className="bg-white text-gray-900 px-6 py-2 rounded-full text-xs font-bold uppercase hover:bg-red-600 hover:text-white transition-all"
-                >
-                  Xaritani ko'rish
-                </button>
-              </div>
-           ) : (
-            <iframe 
+          {!showMap ? (
+            <div className="absolute inset-0 bg-gray-900 flex flex-col items-center justify-center text-white p-4">
+              <IoLocationSharp className="text-red-500 text-5xl mb-4 animate-bounce" />
+              <button
+                onClick={() => setShowMap(true)}
+                className="bg-white text-gray-900 px-6 py-2 rounded-full text-xs font-bold uppercase hover:bg-red-600 hover:text-white transition-all"
+              >
+                Xaritani ko'rish
+              </button>
+            </div>
+          ) : (
+            <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3012.345678901234!2d71.672345!3d41.001234!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDHCsDAwJzA0LjQiTiA3McKwNDAnMjAuNCJF!5e0!3m2!1suz!2s!4v1234567890123"
               className="w-full h-full grayscale border-0"
               allowFullScreen loading="lazy"
               title="TailorShop Location"
             />
-           )}
+          )}
         </div>
       </div>
 

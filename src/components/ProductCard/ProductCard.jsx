@@ -9,6 +9,8 @@ const LottiePlayer = lazy(() =>
 
 import dropDown from "../../assets/oG99I91tLW.json";
 
+const FALLBACK_IMAGE = "https://geostudy.uz/img/pictures/cifvooipg_rf1.jpeg";
+
 // Image Swiper Komponenti
 const ImageSwiper = ({ images, productName }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -27,7 +29,14 @@ const ImageSwiper = ({ images, productName }) => {
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
         {images.map((img, idx) => (
-          <img key={idx} src={img} alt={`${productName} - TailorShop`} className="w-full h-full object-cover flex-shrink-0" loading={idx === 0 ? "eager" : "lazy"} />
+          <img 
+            key={idx} 
+            src={img} 
+            alt={`${productName}`} 
+            className="w-full h-full object-cover flex-shrink-0" 
+            loading={idx === 0 ? "eager" : "lazy"} 
+            onError={(e) => { e.target.src = FALLBACK_IMAGE; }}
+          />
         ))}
       </div>
       {images.length > 1 && (
@@ -53,13 +62,11 @@ const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
           fetch("https://tailorback2025-production.up.railway.app/api/products"),
           fetch("https://tailorback2025-production.up.railway.app/api/reviews")
         ]);
-        
         const prodData = await prodRes.json();
         const revData = await revRes.json();
 
-        // 1. FAQAT is_active: true VA is_latest: true BO'LGANLARNI FILTRLASH
+        // Faqat aktiv va eng yangi 8 ta mahsulot
         const filtered = prodData.filter(p => p.is_active === true && p.is_latest === true);
-        
         setProducts(filtered.slice(0, 8));
         setReviews(revData);
       } catch (err) {
@@ -71,16 +78,32 @@ const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
     fetchData();
   }, []);
 
+  // Chegirmali narxni hisoblash funksiyasi
+  const calculateFinalPrice = (product) => {
+    let price = Number(product.price_uzs || 0);
+    const discount = product.discount;
+    if (discount && discount.is_active !== false) {
+      if (discount.percent) {
+        price = price * (1 - Number(discount.percent) / 100);
+      } else if (discount.amount) {
+        price = Math.max(0, price - Number(discount.amount));
+      }
+    }
+    return price;
+  };
+
   const getProductStats = (productId) => {
     const pRev = reviews.filter(r => r.product_id === productId);
     const avg = pRev.length > 0 ? (pRev.reduce((acc, r) => acc + r.rating, 0) / pRev.length).toFixed(1) : "5.0";
     return { avg };
   };
 
+  const formatPrice = (price) => Number(price).toLocaleString('uz-UZ') + " SO'M";
+
   if (loading) return (
     <div className="min-h-[400px] flex flex-col items-center justify-center">
       <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-      <p className="mt-4 font-black italic text-red-400 tracking-widest uppercase">Yuklanmoqda...</p>
+      <p className="mt-4 font-black italic text-red-400 tracking-widest uppercase animate-pulse">Yuklanmoqda...</p>
     </div>
   );
 
@@ -88,80 +111,91 @@ const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
     <section className="max-w-7xl mx-auto px-4 py-12">
       <div className="flex justify-between items-end mb-10">
         <div>
-          <h2 className="text-2xl sm:text-4xl font-black text-red-900 italic uppercase tracking-tighter">Yangi Kelganlar</h2>
+          <h2 className="text-2xl sm:text-4xl font-black text-slate-900 italic uppercase tracking-tighter">Yangi Kelganlar</h2>
           <div className="h-1.5 w-20 bg-red-600 rounded-full mt-2"></div>
         </div>
-        <Link to="/cart" className="text-red-600 font-bold hover:underline flex items-center gap-2 text-sm sm:text-base">
-          Savatga o'tish <FaCartShopping />
+        <Link to="/all-products" className="text-red-600 font-black italic uppercase text-[10px] tracking-widest hover:text-slate-900 transition-colors flex items-center gap-2">
+          Barchasini ko'rish <FaCartShopping />
         </Link>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
         {products.map((product) => {
           const imageUrls = product.images?.map(img => img.image_url) || [];
+          const mainImage = imageUrls[0] || FALLBACK_IMAGE;
           const { avg } = getProductStats(product.id);
           const isFavorite = favorites.some(fav => fav.id === product.id);
           
-          // NARXNI price_uzs DAN OLISH
-          const currentPrice = Number(product.price_uzs) || 0;
-          const discount = product.discount;
-          const hasDiscount = discount && discount.is_active !== false;
+          const originalPrice = Number(product.price_uzs || 0);
+          const finalPrice = calculateFinalPrice(product);
+          const hasDiscount = finalPrice < originalPrice;
 
           return (
-            <div key={product.id} className="group bg-white rounded-2xl border border-red-50 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col relative overflow-hidden">
-              <div className="h-40 sm:h-60 lg:h-72 relative">
+            <div key={product.id} className="group bg-white rounded-[2rem] border border-transparent hover:border-red-50 shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col relative overflow-hidden animate-fadeIn">
+              
+              {/* Image Section */}
+              <div className="h-48 sm:h-72 lg:h-80 relative">
                 <Link to={`/product/${product.id}`} className="w-full h-full block">
-                  <ImageSwiper images={imageUrls.length > 0 ? imageUrls : ["https://geostudy.uz/img/pictures/cifvooipg_rf1.jpeg"]} productName={product.name}/>
+                  <ImageSwiper images={imageUrls.length > 0 ? imageUrls : [FALLBACK_IMAGE]} productName={product.name}/>
                 </Link>
 
                 <button
                   onClick={() => toggleFavorite(product)}
-                  className={`absolute top-3 right-3 p-2 backdrop-blur-sm rounded-full z-10 shadow-md transition-all active:scale-90 ${
-                    isFavorite ? "bg-red-500 text-white" : "bg-white/80 text-red-400"
+                  className={`absolute top-4 right-4 w-10 h-10 backdrop-blur-md rounded-2xl z-10 shadow-lg transition-all active:scale-75 flex items-center justify-center ${
+                    isFavorite ? "bg-red-600 text-white" : "bg-white/90 text-red-400"
                   }`}
                 >
-                  {isFavorite ? <FaHeart /> : <FaRegHeart />}
+                  {isFavorite ? <FaHeart size={16} /> : <FaRegHeart size={16} />}
                 </button>
 
                 {hasDiscount && (
-                  <div className="absolute top-3 left-3 z-10">
-                    <span className="bg-red-600 text-white text-[9px] font-black px-2 py-1 rounded shadow-sm flex items-center gap-1 animate-pulse">
-                      <FaPercent size={7} />
-                      {discount.percent ? `${Math.round(discount.percent)}%` : 'SALE'}
+                  <div className="absolute top-4 left-4 z-10">
+                    <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-xl shadow-lg flex items-center gap-1 animate-pulse">
+                      <FaPercent size={8} />
+                      {product.discount?.percent ? `${Math.round(product.discount.percent)}%` : 'SALE'}
                     </span>
                   </div>
                 )}
               </div>
 
-              <div className="p-3 sm:p-5 flex flex-col flex-grow">
+              {/* Content Section */}
+              <div className="p-4 sm:p-6 flex flex-col flex-grow">
                 <Link to={`/product/${product.id}`}>
-                  <h3 className="text-sm sm:text-lg font-bold text-slate-800 line-clamp-1 hover:text-red-600 transition uppercase italic">{product.name}</h3>
+                  <h3 className="text-sm sm:text-base font-black text-slate-900 line-clamp-2 hover:text-red-600 transition uppercase italic leading-tight min-h-[40px]">
+                    {product.name}
+                  </h3>
                 </Link>
                 
-                <div className="flex items-center gap-1 my-2">
-                  <div className="flex text-yellow-400 text-[10px] sm:text-xs">
-                    {[...Array(5)].map((_, i) => <FaStar key={i} className={i < Math.round(avg) ? "text-yellow-400" : "text-gray-200"} />)}
+                <div className="flex items-center gap-1.5 my-3">
+                  <div className="flex text-yellow-400 text-[10px]">
+                    {[...Array(5)].map((_, i) => <FaStar key={i} className={i < Math.round(avg) ? "fill-current" : "text-gray-200"} />)}
                   </div>
-                  <span className="text-gray-400 text-[10px] font-bold">({avg})</span>
+                  <span className="text-gray-300 text-[9px] font-black italic tracking-widest uppercase">({avg} Rating)</span>
                 </div>
 
                 <div className="mt-auto">
-                  <div className="flex flex-col mb-4">
-                    <span className="text-red-600 font-black text-base sm:text-xl">
-                      {currentPrice.toLocaleString()} <small className="text-[10px]">UZS</small>
+                  <div className="flex flex-col mb-5">
+                    <span className="text-red-600 font-black text-lg sm:text-2xl tracking-tighter leading-none">
+                      {formatPrice(finalPrice)}
                     </span>
+                    {hasDiscount && (
+                      <span className="text-[11px] text-gray-400 line-through font-bold mt-1">
+                        {formatPrice(originalPrice)}
+                      </span>
+                    )}
                   </div>
 
                   <button
                     onClick={() => addToCart({
                       ...product,
-                      price: currentPrice,
-                      image: imageUrls[0],
+                      price: finalPrice, // Savatga chegirmali narx ketadi
+                      image: mainImage,
                       quantity: 1
                     })}
-                    className="w-full bg-slate-900 text-white py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-red-600 active:scale-95 transition-all font-black text-[10px] uppercase tracking-widest shadow-md"
+                    className="w-full bg-slate-950 text-white py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-red-600 active:scale-95 transition-all font-black text-[10px] uppercase tracking-widest shadow-xl shadow-slate-100 group/btn"
                   >
-                    <FaCartShopping /> SAVATGA
+                    <FaCartShopping className="group-hover/btn:animate-bounce" /> 
+                    Savatga qo'shish
                   </button>
                 </div>
               </div>
@@ -170,14 +204,21 @@ const Products = ({ addToCart, favorites = [], toggleFavorite }) => {
         })}
       </div>
 
-      <div className="mt-20 flex flex-col items-center">
+      <div className="mt-16 flex flex-col items-center">
         <Link to="/all-products" className="group flex flex-col items-center">
-          <Suspense fallback={<div className="h-32 w-32" />}>
+          <Suspense fallback={<div className="h-32 w-32 bg-gray-50 rounded-full animate-pulse" />}>
             <LottiePlayer autoplay loop src={dropDown} className="w-32 sm:w-44 transition-transform group-hover:scale-110" />
           </Suspense>
-          <p className="text-center text-red-700 font-black uppercase tracking-widest text-xs -mt-5">Barchasini ko'rish</p>
+          <p className="text-center text-slate-400 font-black uppercase tracking-[0.4em] text-[10px] italic -mt-5 group-hover:text-red-600 transition-colors">
+            Katalogga o'tish
+          </p>
         </Link>
       </div>
+
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fadeIn { animation: fadeIn 0.6s ease-out forwards; }
+      `}</style>
     </section>
   );
 };

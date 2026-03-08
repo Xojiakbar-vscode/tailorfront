@@ -4,19 +4,35 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   FaArrowLeft, FaSearch, FaFilter, FaTimes, FaStar, 
   FaShoppingCart, FaHeart, FaRegHeart, FaPercent, 
-  FaChevronDown, FaUndoAlt, FaChevronRight, FaSpinner
+  FaChevronDown, FaUndoAlt, FaChevronRight, FaSpinner,
+  FaCheck, FaBars, FaThLarge, FaSortAmountDown
 } from 'react-icons/fa';
-import { GiClothes } from 'react-icons/gi';
 
 const API_URL = "https://tailorback2025-production.up.railway.app/api/products";
 const CATEGORIES_URL = "https://tailorback2025-production.up.railway.app/api/categories";
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
 // Cache for API responses
 const cache = new Map();
+const DEBOUNCE_DELAY = 500;
+const ITEMS_PER_PAGE = 12;
+
+// ================= UTILITY FUNCTIONS =================
+const formatPrice = (price) => {
+  const num = Number(price) || 0;
+  return num.toLocaleString('uz-UZ') + " SO'M";
+};
+
+const debounce = (func, delay) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+};
 
 // ================= LAZY IMAGE COMPONENT =================
-const LazyImage = ({ src, alt, className }) => {
+const LazyImage = React.memo(({ src, alt, className, onLoad, onError }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(false);
   const imgRef = useRef();
@@ -33,7 +49,7 @@ const LazyImage = ({ src, alt, className }) => {
           }
         });
       },
-      { rootMargin: "50px", threshold: 0.1 }
+      { rootMargin: "50px 0px", threshold: 0.01 }
     );
 
     if (imgRef.current) {
@@ -47,48 +63,84 @@ const LazyImage = ({ src, alt, className }) => {
     };
   }, [src]);
 
+  const handleLoad = () => {
+    setIsLoaded(true);
+    onLoad?.();
+  };
+
+  const handleError = () => {
+    setError(true);
+    onError?.();
+  };
+
   return (
-    <div className="relative w-full h-full bg-gray-100 overflow-hidden">
+    <div className="relative w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
       {!isLoaded && !error && (
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300 animate-pulse" />
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent shimmer" />
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse" />
+        </div>
+      )}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <span className="text-gray-400 text-xs">Rasm yuklanmadi</span>
+        </div>
       )}
       <img
         ref={imgRef}
         src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E"
         data-src={src}
         alt={alt}
-        className={`${className} ${isLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-500`}
-        onLoad={() => setIsLoaded(true)}
-        onError={() => setError(true)}
+        className={`${className} ${isLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-700`}
+        onLoad={handleLoad}
+        onError={handleError}
         loading="lazy"
       />
     </div>
   );
-};
+});
+
+LazyImage.displayName = 'LazyImage';
 
 // ================= CATEGORY TREE COMPONENT =================
-const CategoryTree = ({ categories, selectedCategory, onSelectCategory, expandedCategories, onToggleExpand }) => {
+const CategoryTree = React.memo(({ 
+  categories, 
+  selectedCategory, 
+  onSelectCategory, 
+  expandedCategories, 
+  onToggleExpand,
+  productCountByCategory 
+}) => {
   
   const renderCategory = (category, level = 0) => {
     const hasChildren = category.children && category.children.length > 0;
     const isExpanded = expandedCategories.includes(category.id);
     const isSelected = selectedCategory === category.id.toString();
+    const productCount = productCountByCategory[category.id] || 0;
     
     return (
       <div key={category.id} className="w-full">
         <div 
-          className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-[11px] font-black uppercase transition-all mb-1 ${
+          className={`flex items-center justify-between w-full px-4 py-3 rounded-2xl text-xs font-bold uppercase transition-all mb-1 ${
             isSelected 
-              ? 'bg-red-600 text-white shadow-lg shadow-red-100' 
-              : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+              ? 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg shadow-red-100' 
+              : 'hover:bg-gray-100 text-gray-600'
           }`}
-          style={{ paddingLeft: `${level * 20 + 16}px` }}
+          style={{ paddingLeft: `${Math.min(level * 20 + 16, 60)}px` }}
         >
           <button
             onClick={() => onSelectCategory(category.id.toString())}
-            className="flex-1 text-left"
+            className="flex-1 text-left truncate"
+            title={category.name}
           >
             {category.name}
+            {productCount > 0 && (
+              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
+                isSelected ? 'bg-red-400' : 'bg-gray-200'
+              }`}>
+                {productCount}
+              </span>
+            )}
           </button>
           
           {hasChildren && (
@@ -97,9 +149,10 @@ const CategoryTree = ({ categories, selectedCategory, onSelectCategory, expanded
                 e.stopPropagation();
                 onToggleExpand(category.id);
               }}
-              className={`p-1 rounded-lg transition-all ${
+              className={`p-1.5 rounded-lg transition-all duration-300 ${
                 isSelected ? 'hover:bg-red-700' : 'hover:bg-gray-200'
               }`}
+              aria-label={isExpanded ? "Yopish" : "Ochish"}
             >
               <FaChevronDown 
                 className={`transition-transform duration-300 ${
@@ -112,7 +165,7 @@ const CategoryTree = ({ categories, selectedCategory, onSelectCategory, expanded
         </div>
         
         {hasChildren && isExpanded && (
-          <div className="ml-4 mt-1">
+          <div className="ml-4 mt-1 border-l-2 border-red-100 pl-2">
             {category.children.map(child => renderCategory(child, level + 1))}
           </div>
         )}
@@ -121,56 +174,199 @@ const CategoryTree = ({ categories, selectedCategory, onSelectCategory, expanded
   };
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 max-h-96 overflow-y-auto custom-scrollbar pr-2">
       <button 
         onClick={() => onSelectCategory('all')} 
-        className={`w-full text-left px-4 py-3 rounded-xl text-[11px] font-black uppercase transition-all mb-2 ${
+        className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-bold uppercase transition-all mb-2 ${
           selectedCategory === 'all' 
-            ? 'bg-red-600 text-white shadow-lg shadow-red-100' 
-            : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+            ? 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg shadow-red-100' 
+            : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
         }`}
       >
-        Barchasi
+        Barcha mahsulotlar
+        {productCountByCategory.total > 0 && (
+          <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
+            selectedCategory === 'all' ? 'bg-red-400' : 'bg-gray-200'
+          }`}>
+            {productCountByCategory.total}
+          </span>
+        )}
       </button>
       
       {categories.map(category => renderCategory(category))}
     </div>
   );
-};
+});
+
+CategoryTree.displayName = 'CategoryTree';
 
 // ================= PRODUCT CARD COMPONENT =================
-const ProductCard = React.memo(({ product, isFavorite, onToggleFavorite, onAddToCart, index }) => {
+const ProductCard = React.memo(({ product, isFavorite, onToggleFavorite, onAddToCart, index, viewMode }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  
   const finalPrice = useMemo(() => {
     let price = Number(product.price_uzs || product.price || 0);
     const discount = product.discount;
-    if (discount && discount.is_active !== false) {
-      if (discount.percent) price = price * (1 - Number(discount.percent) / 100);
-      else if (discount.amount) price = Math.max(0, price - Number(discount.amount));
+    if (discount?.is_active) {
+      if (discount.percent) {
+        price = price * (1 - Math.min(Number(discount.percent), 100) / 100);
+      } else if (discount.amount) {
+        price = Math.max(0, price - Number(discount.amount));
+      }
     }
-    return price;
+    return Math.round(price);
   }, [product]);
 
+  const originalPrice = useMemo(() => 
+    Number(product.price_uzs || product.price || 0),
+    [product]
+  );
+
   const isDiscountActive = useMemo(() => 
-    product.discount && product.discount.is_active !== false,
+    product.discount?.is_active && (product.discount.percent || product.discount.amount),
     [product.discount]
   );
 
-  const mainImg = useMemo(() => 
-    product.images?.[0]?.image_url || "https://geostudy.uz/img/pictures/cifvooipg_rf1.jpeg",
-    [product.images]
-  );
+  const discountPercentage = useMemo(() => {
+    if (!isDiscountActive) return 0;
+    if (product.discount?.percent) return Number(product.discount.percent);
+    if (product.discount?.amount) {
+      return Math.round((Number(product.discount.amount) / originalPrice) * 100);
+    }
+    return 0;
+  }, [isDiscountActive, product.discount, originalPrice]);
 
-  const formatPrice = (price) => Number(price).toLocaleString('uz-UZ') + " SO'M";
+  const mainImg = useMemo(() => {
+    if (product.images?.length > 0) {
+      return product.images[0].image_url;
+    }
+    return "https://geostudy.uz/img/pictures/cifvooipg_rf1.jpeg";
+  }, [product.images]);
+
+  const hoverImg = useMemo(() => {
+    if (product.images?.length > 1) {
+      return product.images[1].image_url;
+    }
+    return mainImg;
+  }, [product.images, mainImg]);
+
+  const handleAddToCart = useCallback(() => {
+    onAddToCart({
+      ...product,
+      finalPrice,
+      image: mainImg,
+      quantity: 1
+    });
+  }, [product, finalPrice, mainImg, onAddToCart]);
+
+  const handleFavoriteToggle = useCallback(() => {
+    onToggleFavorite(product);
+  }, [product, onToggleFavorite]);
+
+  if (viewMode === 'list') {
+    return (
+      <div 
+        className="bg-white rounded-3xl p-4 border border-gray-100 hover:border-red-600/20 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 animate-fadeIn group"
+        style={{ animationDelay: `${index * 50}ms` }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="flex flex-col sm:flex-row gap-6">
+          <div className="relative w-full sm:w-48 h-48 rounded-2xl overflow-hidden bg-gray-50 flex-shrink-0">
+            <Link to={`/product/${product.id}`} className="block w-full h-full">
+              <LazyImage 
+                src={isHovered ? hoverImg : mainImg} 
+                alt={product.name} 
+                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
+              />
+            </Link>
+            
+            <div className="absolute top-3 left-3 flex flex-col gap-2">
+              {isDiscountActive && (
+                <div className="bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-lg flex items-center gap-1">
+                  <FaPercent size={8}/> -{discountPercentage}%
+                </div>
+              )}
+              {product.is_latest && (
+                <span className="bg-black text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-lg">
+                  YANGI
+                </span>
+              )}
+            </div>
+
+            <button
+              onClick={handleFavoriteToggle}
+              className={`absolute top-3 right-3 p-3 rounded-xl backdrop-blur-md transition-all active:scale-75 shadow-lg ${
+                isFavorite 
+                  ? 'bg-red-600 text-white' 
+                  : 'bg-white/90 text-gray-400 hover:text-red-600'
+              }`}
+              aria-label={isFavorite ? "Sevimlilardan olib tashlash" : "Sevimlilarga qo'shish"}
+            >
+              {isFavorite ? <FaHeart size={14}/> : <FaRegHeart size={14}/>}
+            </button>
+          </div>
+
+          <div className="flex-1 flex flex-col">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                  Tailor Premium
+                </span>
+                <Link to={`/product/${product.id}`}>
+                  <h3 className="text-lg font-bold text-gray-900 line-clamp-2 mt-1 group-hover:text-red-600 transition-colors">
+                    {product.name}
+                  </h3>
+                </Link>
+              </div>
+              <div className="flex items-center gap-1 text-xs font-bold text-orange-400 bg-orange-50 px-2 py-1 rounded-lg">
+                <FaStar size={12}/> 5.0
+              </div>
+            </div>
+
+            {product.description && (
+              <p className="text-sm text-gray-600 line-clamp-2 mb-4">
+                {product.description}
+              </p>
+            )}
+
+            <div className="mt-auto">
+              <div className="flex items-baseline gap-3 mb-4">
+                <p className="text-2xl font-black text-red-600">
+                  {formatPrice(finalPrice)}
+                </p>
+                {isDiscountActive && (
+                  <p className="text-sm text-gray-400 line-through">
+                    {formatPrice(originalPrice)}
+                  </p>
+                )}
+              </div>
+
+              <button
+                onClick={handleAddToCart}
+                className="w-full sm:w-auto px-8 py-4 bg-gray-950 text-white rounded-xl flex items-center justify-center gap-2 hover:bg-red-600 transition-all duration-300 active:scale-95 shadow-lg hover:shadow-red-600/30 group/btn"
+              >
+                <FaShoppingCart size={14} className="group-hover/btn:animate-bounce" />
+                <span className="text-xs font-bold uppercase">Savatga Qo'shish</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 
-      className="group bg-white rounded-[2.2rem] p-2 sm:p-4 border border-transparent hover:border-red-600/10 transition-all duration-500 flex flex-col h-full shadow-sm hover:shadow-2xl hover:-translate-y-2 animate-slideUp"
+      className="group bg-white rounded-3xl p-3 sm:p-4 border border-transparent hover:border-red-600/20 transition-all duration-500 flex flex-col h-full shadow-sm hover:shadow-2xl hover:-translate-y-2 animate-slideUp"
       style={{ animationDelay: `${index * 60}ms` }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="relative aspect-[3/4] rounded-[1.8rem] overflow-hidden mb-4 bg-gray-50">
+      <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-4 bg-gray-50">
         <Link to={`/product/${product.id}`} className="block w-full h-full">
           <LazyImage 
-            src={mainImg} 
+            src={isHovered && product.images?.length > 1 ? hoverImg : mainImg} 
             alt={product.name} 
             className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
           />
@@ -178,18 +374,20 @@ const ProductCard = React.memo(({ product, isFavorite, onToggleFavorite, onAddTo
         
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {isDiscountActive && (
-            <div className="bg-red-600 text-white text-[9px] font-black px-2.5 py-1 rounded-lg animate-pulse shadow-lg flex items-center gap-1">
-              <FaPercent size={8}/> {Math.round(product.discount.percent || 0)}%
+            <div className="bg-red-600 text-white text-[9px] font-bold px-2 py-1 rounded-lg animate-pulse shadow-lg flex items-center gap-1">
+              <FaPercent size={8}/> -{discountPercentage}%
             </div>
           )}
           {product.is_latest && (
-            <span className="bg-black text-white text-[9px] font-black px-2.5 py-1 rounded-lg shadow-lg">NEW</span>
+            <span className="bg-black text-white text-[9px] font-bold px-2 py-1 rounded-lg shadow-lg">
+              NEW
+            </span>
           )}
         </div>
 
         <button
-          onClick={() => onToggleFavorite(product)}
-          className={`absolute top-3 right-3 p-3 rounded-2xl backdrop-blur-md transition-all active:scale-75 shadow-lg ${
+          onClick={handleFavoriteToggle}
+          className={`absolute top-3 right-3 p-3 rounded-xl backdrop-blur-md transition-all active:scale-75 shadow-lg ${
             isFavorite 
               ? 'bg-red-600 text-white' 
               : 'bg-white/90 text-gray-400 hover:text-red-600'
@@ -200,40 +398,40 @@ const ProductCard = React.memo(({ product, isFavorite, onToggleFavorite, onAddTo
         </button>
       </div>
 
-      <div className="flex flex-col flex-grow px-2">
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] italic">
-            Tailor Premium
+      <div className="flex flex-col flex-grow px-1">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">
+            Tailor
           </span>
-          <div className="flex items-center gap-1 text-[10px] font-black text-orange-400">
-            <FaStar size={10}/> 5.0
+          <div className="flex items-center gap-1 text-[9px] font-bold text-orange-400">
+            <FaStar size={9}/> 5.0
           </div>
         </div>
         
         <Link to={`/product/${product.id}`}>
-          <h3 className="text-[13px] sm:text-[15px] font-black text-gray-900 line-clamp-2 mb-4 uppercase italic leading-tight group-hover:text-red-600 transition-colors">
+          <h3 className="text-xs sm:text-sm font-bold text-gray-900 line-clamp-2 mb-3 leading-tight group-hover:text-red-600 transition-colors">
             {product.name}
           </h3>
         </Link>
         
         <div className="mt-auto">
-          <div className="mb-4">
-            <p className="text-base sm:text-xl font-black text-red-600 tracking-tighter leading-none">
+          <div className="mb-3">
+            <p className="text-base sm:text-lg font-black text-red-600">
               {formatPrice(finalPrice)}
             </p>
             {isDiscountActive && (
-              <p className="text-[10px] text-gray-400 line-through font-bold mt-1">
-                {formatPrice(product.price_uzs || product.price)}
+              <p className="text-[9px] text-gray-400 line-through">
+                {formatPrice(originalPrice)}
               </p>
             )}
           </div>
 
           <button
-            onClick={() => onAddToCart(product, finalPrice, mainImg)}
-            className="w-full py-4 bg-gray-950 text-white rounded-[1.3rem] flex items-center justify-center gap-2 hover:bg-red-600 transition-all duration-300 active:scale-95 shadow-lg hover:shadow-red-600/30 group/btn"
+            onClick={handleAddToCart}
+            className="w-full py-3.5 bg-gray-950 text-white rounded-xl flex items-center justify-center gap-2 hover:bg-red-600 transition-all duration-300 active:scale-95 text-[9px] font-bold uppercase shadow-lg hover:shadow-red-600/30 group/btn"
           >
-            <FaShoppingCart size={14} className="group-hover/btn:animate-bounce" />
-            <span className="text-[10px] font-black uppercase italic">Savatga Qo'shish</span>
+            <FaShoppingCart size={12} className="group-hover/btn:animate-bounce" />
+            Savatga Qo'shish
           </button>
         </div>
       </div>
@@ -241,28 +439,62 @@ const ProductCard = React.memo(({ product, isFavorite, onToggleFavorite, onAddTo
   );
 });
 
+ProductCard.displayName = 'ProductCard';
+
+// ================= SKELETON LOADER =================
+const SkeletonLoader = () => (
+  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8 animate-pulse">
+    {[...Array(6)].map((_, i) => (
+      <div key={i} className="bg-white rounded-3xl p-4">
+        <div className="aspect-[3/4] bg-gray-200 rounded-2xl mb-4" />
+        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+        <div className="h-4 bg-gray-200 rounded w-1/2 mb-4" />
+        <div className="h-8 bg-gray-200 rounded-xl" />
+      </div>
+    ))}
+  </div>
+);
+
 // ================= MAIN COMPONENT =================
 const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
+  // State declarations
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('default');
   const [showFilters, setShowFilters] = useState(false);
-  const [priceRange, setPriceRange] = useState([0, 20000000]);
+  const [priceRange, setPriceRange] = useState([0, 0]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [page, setPage] = useState(1);
   const [expandedCategories, setExpandedCategories] = useState([]);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [maxPrice, setMaxPrice] = useState(20000000);
+  const [productCountByCategory, setProductCountByCategory] = useState({ total: 0 });
   
-  const itemsPerPage = 12;
-  const location = useLocation();
+  // Refs
   const abortControllerRef = useRef();
   const isMounted = useRef(true);
+  const searchInputRef = useRef(null);
+  const productsRef = useRef(null);
+
+  const location = useLocation();
+
+  // Debounced search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, DEBOUNCE_DELAY);
+
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
   // Get all child category IDs recursively
-  const getAllChildIds = useCallback((categoryId, allCats) => {
+  const getAllChildIds = useCallback((categoryId, allCats = categories) => {
     const category = allCats.find(c => c.id === parseInt(categoryId));
     if (!category) return [];
     
@@ -277,6 +509,18 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
     }
     
     return [...new Set(ids)];
+  }, [categories]);
+
+  // Calculate product counts by category
+  const calculateCategoryCounts = useCallback((productsList) => {
+    const counts = { total: productsList.length };
+    
+    productsList.forEach(product => {
+      const catId = product.category_id;
+      counts[catId] = (counts[catId] || 0) + 1;
+    });
+    
+    return counts;
   }, []);
 
   // Initial data fetch
@@ -301,12 +545,13 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
 
   // Apply filters when dependencies change
   useEffect(() => {
-    applyFilters();
-  }, [searchTerm, selectedCategory, sortBy, priceRange, selectedTags, products]);
+    if (products.length > 0) {
+      applyFilters();
+    }
+  }, [debouncedSearchTerm, selectedCategory, sortBy, priceRange, selectedTags, products]);
 
   const fetchAllData = async () => {
     try {
-      // Abort previous request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -323,12 +568,15 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
           setProducts(cached.data.products);
           setCategories(cached.data.categories);
           
-          const maxPrice = cached.data.products.length > 0 
+          const maxP = cached.data.products.length > 0 
             ? Math.max(...cached.data.products.map(p => Number(p.price_uzs || p.price || 0))) 
             : 20000000;
-          setPriceRange([0, maxPrice]);
+          setMaxPrice(maxP);
+          setPriceRange([0, maxP]);
           
+          setProductCountByCategory(calculateCategoryCounts(cached.data.products));
           setLoading(false);
+          setInitialLoad(false);
         }
         return;
       }
@@ -338,6 +586,10 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
         fetch(CATEGORIES_URL, { signal })
       ]);
       
+      if (!productsRes.ok || !categoriesRes.ok) {
+        throw new Error('Network response was not ok');
+      }
+      
       const productsData = await productsRes.json();
       const categoriesData = await categoriesRes.json();
       
@@ -345,12 +597,10 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
       const categoryMap = {};
       const rootCategories = [];
       
-      // First pass: create map of all categories
       categoriesData.forEach(cat => {
         categoryMap[cat.id] = { ...cat, children: [] };
       });
       
-      // Second pass: build tree
       categoriesData.forEach(cat => {
         if (cat.parent_id === null) {
           rootCategories.push(categoryMap[cat.id]);
@@ -358,6 +608,17 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
           categoryMap[cat.parent_id].children.push(categoryMap[cat.id]);
         }
       });
+      
+      // Sort categories by name
+      const sortCategories = (cats) => {
+        cats.sort((a, b) => a.name.localeCompare(b.name));
+        cats.forEach(cat => {
+          if (cat.children.length > 0) {
+            sortCategories(cat.children);
+          }
+        });
+      };
+      sortCategories(rootCategories);
       
       // Filter active products
       const activeProducts = productsData.filter(p => p.is_active !== false);
@@ -368,10 +629,13 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
       setFilteredProducts(activeProducts);
       setCategories(rootCategories);
       
-      const maxPrice = activeProducts.length > 0 
+      const maxP = activeProducts.length > 0 
         ? Math.max(...activeProducts.map(p => Number(p.price_uzs || p.price || 0))) 
         : 20000000;
-      setPriceRange([0, maxPrice]);
+      setMaxPrice(maxP);
+      setPriceRange([0, maxP]);
+
+      setProductCountByCategory(calculateCategoryCounts(activeProducts));
 
       // Cache the response
       cache.set(cacheKey, {
@@ -385,9 +649,18 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
     } catch (error) {
       if (error.name === 'AbortError') return;
       console.error('Xatolik:', error);
+      
+      if (isMounted.current) {
+        // Show error UI
+        setProducts([]);
+        setFilteredProducts([]);
+      }
     } finally {
       if (isMounted.current) {
-        setTimeout(() => setLoading(false), 800);
+        setTimeout(() => {
+          setLoading(false);
+          setInitialLoad(false);
+        }, 500);
       }
     }
   };
@@ -395,25 +668,30 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
   const calculateFinalPrice = useCallback((product) => {
     let price = Number(product.price_uzs || product.price || 0);
     const discount = product.discount;
-    if (discount && discount.is_active !== false) {
-      if (discount.percent) price = price * (1 - Number(discount.percent) / 100);
-      else if (discount.amount) price = Math.max(0, price - Number(discount.amount));
+    if (discount?.is_active) {
+      if (discount.percent) {
+        price = price * (1 - Math.min(Number(discount.percent), 100) / 100);
+      } else if (discount.amount) {
+        price = Math.max(0, price - Number(discount.amount));
+      }
     }
-    return price;
+    return Math.round(price);
   }, []);
 
   const applyFilters = useCallback(() => {
     let filtered = [...products];
 
     // Search filter
-    if (searchTerm) {
+    if (debouncedSearchTerm) {
+      const searchLower = debouncedSearchTerm.toLowerCase();
       filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+        product.name.toLowerCase().includes(searchLower) ||
+        product.description?.toLowerCase().includes(searchLower) ||
+        product.sku?.toLowerCase().includes(searchLower)
       );
     }
 
-    // Category filter - handle parent categories
+    // Category filter
     if (selectedCategory !== 'all') {
       const categoryIds = getAllChildIds(selectedCategory, categories);
       filtered = filtered.filter(product => 
@@ -430,11 +708,11 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
     // Tags filter
     if (selectedTags.length > 0) {
       filtered = filtered.filter(product => {
-        const productTags = [
-          product.is_latest && 'latest',
-          product.is_popular && 'popular',
-          (product.discount && product.discount.is_active) && 'discount'
-        ].filter(Boolean);
+        const productTags = [];
+        if (product.is_latest) productTags.push('latest');
+        if (product.is_popular) productTags.push('popular');
+        if (product.discount?.is_active) productTags.push('discount');
+        
         return selectedTags.some(tag => productTags.includes(tag));
       });
     }
@@ -448,7 +726,17 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
         filtered.sort((a, b) => calculateFinalPrice(b) - calculateFinalPrice(a)); 
         break;
       case 'newest': 
-        filtered.sort((a, b) => (new Date(b.created_at) - new Date(a.created_at))); 
+        filtered.sort((a, b) => {
+          const dateA = new Date(a.created_at || 0);
+          const dateB = new Date(b.created_at || 0);
+          return dateB - dateA;
+        }); 
+        break;
+      case 'name_asc':
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'name_desc':
+        filtered.sort((a, b) => b.name.localeCompare(a.name));
         break;
       default: break;
     }
@@ -457,13 +745,13 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
       setFilteredProducts(filtered);
       setPage(1);
     }
-  }, [products, searchTerm, selectedCategory, sortBy, priceRange, selectedTags, categories, calculateFinalPrice, getAllChildIds]);
+  }, [products, debouncedSearchTerm, selectedCategory, sortBy, priceRange, selectedTags, categories, calculateFinalPrice, getAllChildIds]);
 
   const handleCategorySelect = useCallback((categoryId) => {
     setSelectedCategory(categoryId);
-    setShowFilters(false); // Close mobile filters after selection
+    setShowFilters(false);
     
-    // Update URL without reload
+    // Update URL
     const url = new URL(window.location);
     if (categoryId === 'all') {
       url.searchParams.delete('category');
@@ -471,6 +759,9 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
       url.searchParams.set('category', categoryId);
     }
     window.history.pushState({}, '', url);
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const handleToggleExpand = useCallback((categoryId) => {
@@ -481,47 +772,63 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
     );
   }, []);
 
-  const handleAddToCart = useCallback((product, price, image) => {
+  const handleAddToCart = useCallback((product) => {
     addToCart({
-      ...product,
-      price: price,
-      image: image,
+      id: product.id,
+      name: product.name,
+      price: product.finalPrice || calculateFinalPrice(product),
+      image: product.image || product.images?.[0]?.image_url,
       quantity: 1
     });
     
     // Show success feedback
-    const btn = document.activeElement;
-    btn.classList.add('bg-green-500');
-    setTimeout(() => btn.classList.remove('bg-green-500'), 300);
-  }, [addToCart]);
+    const event = new CustomEvent('cart-updated', { 
+      detail: { message: 'Mahsulot savatga qo\'shildi' } 
+    });
+    window.dispatchEvent(event);
+  }, [addToCart, calculateFinalPrice]);
 
   const handleToggleFavorite = useCallback((product) => {
     toggleFavorite(product);
-  }, [toggleFavorite]);
+    
+    // Show feedback
+    const isFav = favorites.some(f => f.id === product.id);
+    const event = new CustomEvent('favorite-updated', { 
+      detail: { 
+        message: isFav ? 'Sevimlilardan olib tashlandi' : 'Sevimlilarga qo\'shildi'
+      } 
+    });
+    window.dispatchEvent(event);
+  }, [toggleFavorite, favorites]);
 
   const resetFilters = useCallback(() => {
     setSearchTerm('');
+    setDebouncedSearchTerm('');
     setSelectedCategory('all');
     setSortBy('default');
     setSelectedTags([]);
     setExpandedCategories([]);
-    
-    if (products.length > 0) {
-      const maxPrice = Math.max(...products.map(p => Number(p.price_uzs || p.price || 0)));
-      setPriceRange([0, maxPrice]);
-    }
+    setPriceRange([0, maxPrice]);
     
     // Update URL
     const url = new URL(window.location);
     url.searchParams.delete('category');
     window.history.pushState({}, '', url);
-  }, [products]);
+    
+    if (searchInputRef.current) {
+      searchInputRef.current.value = '';
+    }
+  }, [maxPrice]);
 
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const handlePriceChange = useCallback((value) => {
+    setPriceRange([priceRange[0], parseInt(value)]);
+  }, [priceRange]);
+
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   
   const currentProducts = useMemo(() => {
-    const startIndex = (page - 1) * itemsPerPage;
-    return filteredProducts.slice(startIndex, startIndex + itemsPerPage);
+    const startIndex = (page - 1) * ITEMS_PER_PAGE;
+    return filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredProducts, page]);
 
   const paginationRange = useMemo(() => {
@@ -549,21 +856,42 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
   }, [totalPages, page]);
 
   const handlePageChange = useCallback((newPage) => {
+    if (newPage === '...') return;
     setPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Smooth scroll to products
+    if (productsRef.current) {
+      productsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }, []);
 
-  const formatPrice = (price) => Number(price).toLocaleString('uz-UZ') + " SO'M";
+  const sortOptions = [
+    { value: 'default', label: 'Odatiy' },
+    { value: 'price_low', label: 'Narxi: arzondan qimmatga' },
+    { value: 'price_high', label: 'Narxi: qimmatdan arzonga' },
+    { value: 'newest', label: 'Eng yangilar' },
+    { value: 'name_asc', label: 'Nomi: A dan Z gacha' },
+    { value: 'name_desc', label: 'Nomi: Z dan A gacha' }
+  ];
+
+  const tagOptions = [
+    { value: 'latest', label: 'Yangi', color: 'bg-blue-500' },
+    { value: 'popular', label: 'Ommabop', color: 'bg-orange-500' },
+    { value: 'discount', label: 'Chegirma', color: 'bg-green-500' }
+  ];
 
   // Loading state
-  if (loading) {
+  if (initialLoad) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white">
         <div className="relative">
-          <div className="w-24 h-24 border-8 border-red-50 border-t-red-600 rounded-full animate-spin"></div>
+          <div className="w-20 h-20 border-4 border-red-100 border-t-red-600 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-10 h-10 bg-red-600 rounded-full animate-ping opacity-20"></div>
+          </div>
         </div>
-        <p className="mt-8 text-gray-400 font-black tracking-[0.3em] uppercase text-[10px] animate-pulse">
-          TailorShop Yuklanmoqda...
+        <p className="mt-6 text-gray-400 font-bold tracking-widest uppercase text-xs animate-pulse">
+          TailorShop yuklanmoqda...
         </p>
       </div>
     );
@@ -572,41 +900,86 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
   return (
     <>
       <Helmet>
-        <title>Barcha Mahsulotlar | TailorShop.uz – Furnitura Katalogi</title>
-        <meta name="description" content="TailorShop.uz katalogida ip, tugma, zamok va barcha turdagi tikuvchilik furnituralarini hamyonbop narxlarda toping." />
-        <link rel="canonical" href="https://www.tailorshop.uz/all-products" />
-        <meta property="og:title" content="Barcha Mahsulotlar | TailorShop.uz" />
+        <title>Barcha mahsulotlar | TailorShop.uz – Furnitura katalogi</title>
+        <meta name="description" content="TailorShop.uz katalogida ip, tugma, zamok va barcha turdagi tikuvchilik furnituralarini toping. 5000+ mahsulot, tezkor yetkazib berish." />
+        <link rel="canonical" href="https://tailorshop.uz/all-products" />
+        <meta property="og:title" content="Barcha mahsulotlar | TailorShop.uz" />
         <meta property="og:description" content="Eng sifatli tikuvchilik anjomlari va aksessuarlari." />
-        <meta property="og:url" content="https://www.tailorshop.uz/all-products" />
+        <meta property="og:url" content="https://tailorshop.uz/all-products" />
         <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://tailorshop.uz/og-image.jpg" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="TailorShop.uz – Tikuvchilik furnituralari" />
+        <meta name="twitter:description" content="Barcha turdagi tikuvchilik anjomlari" />
+        
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "CollectionPage",
             "name": "Barcha Mahsulotlar Katalogi",
             "description": "TailorShop tikuvchilik furnituralari to'plami",
-            "url": "https://www.tailorshop.uz/all-products"
+            "url": "https://tailorshop.uz/all-products",
+            "numberOfItems": filteredProducts.length,
+            "mainEntity": {
+              "@type": "ItemList",
+              "itemListElement": filteredProducts.slice(0, 10).map((product, index) => ({
+                "@type": "ListItem",
+                "position": index + 1,
+                "url": `https://tailorshop.uz/product/${product.id}`,
+                "name": product.name
+              }))
+            }
           })}
         </script>
       </Helmet>
 
-      <div className="min-h-screen bg-[#fafafa] text-slate-900 pb-20 font-sans">
-        <header className="sticky top-0 z-[110] bg-white/80 backdrop-blur-2xl border-b border-gray-100 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <Link to="/" className="flex items-center gap-3 active:scale-95 transition-transform group">
-                <div className="bg-red-600 p-2.5 rounded-2xl shadow-lg shadow-red-200 group-hover:rotate-[-10deg] transition-all">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-20" ref={productsRef}>
+        {/* Sticky Header */}
+        <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <div className="flex items-center justify-between gap-4">
+              <Link to="/" className="flex items-center gap-3 active:scale-95 transition-transform group flex-shrink-0">
+                <div className="bg-red-600 p-2.5 rounded-xl shadow-lg shadow-red-200 group-hover:rotate-[-10deg] transition-all">
                   <FaArrowLeft className="text-white text-sm" />
                 </div>
-                <h1 className="text-2xl font-black uppercase italic tracking-tighter">Katalog</h1>
+                <h1 className="text-xl sm:text-2xl font-black uppercase italic tracking-tighter">Katalog</h1>
               </Link>
-              <div className="flex items-center gap-2">
+
+              <div className="flex-1 max-w-2xl relative group">
+                <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-600 transition-colors" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Mahsulotlarni qidirish..."
+                  defaultValue={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 sm:py-3 bg-gray-100 border-2 border-transparent focus:bg-white focus:border-red-600/20 focus:ring-4 focus:ring-red-600/5 rounded-2xl outline-none text-sm font-medium transition-all"
+                />
+                {searchTerm && (
+                  <button 
+                    onClick={() => setSearchTerm('')} 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-red-600 transition-colors"
+                  >
+                    <FaTimes size={14} />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                  className="hidden sm:flex p-2.5 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                  aria-label={viewMode === 'grid' ? 'Ro\'yxat ko\'rinishi' : 'Katak ko\'rinishi'}
+                >
+                  {viewMode === 'grid' ? <FaBars size={16} /> : <FaThLarge size={16} />}
+                </button>
+
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-2 px-5 py-3 rounded-2xl border transition-all active:scale-90 text-sm font-bold ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all active:scale-95 text-sm font-bold ${
                     showFilters 
-                      ? 'bg-red-600 border-red-600 text-white shadow-xl shadow-red-200' 
-                      : 'bg-white border-gray-200 text-gray-700'
+                      ? 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-200' 
+                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   <FaFilter className={showFilters ? 'rotate-180 transition-transform' : ''} />
@@ -614,50 +987,34 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
                 </button>
               </div>
             </div>
-            
-            <div className="relative group max-w-4xl mx-auto w-full">
-              <FaSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-600 transition-colors" />
-              <input
-                type="text"
-                placeholder="Mahsulotlarni qidirish..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-14 pr-12 py-4 bg-gray-100 border-2 border-transparent focus:bg-white focus:border-red-600/10 focus:ring-4 focus:ring-red-600/5 rounded-[1.8rem] outline-none text-sm font-bold transition-all"
-              />
-              {searchTerm && (
-                <button 
-                  onClick={() => setSearchTerm('')} 
-                  className="absolute right-5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-red-600 transition-colors"
-                >
-                  <FaTimes />
-                </button>
-              )}
-            </div>
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex flex-col lg:flex-row gap-8">
+        <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
             {/* Sidebar */}
-            <aside className={`lg:w-72 lg:block transition-all duration-500 ${showFilters ? 'block animate-fadeIn' : 'hidden'}`}>
-              <div className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/50 sticky top-40 border border-gray-50">
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="font-black uppercase text-xs tracking-widest text-red-600">
-                    Filtrlash
+            <aside className={`lg:w-80 lg:block transition-all duration-500 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+              <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xl shadow-gray-200/50 sticky top-24 border border-gray-100">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-black uppercase text-xs tracking-wider text-red-600 flex items-center gap-2">
+                    <FaFilter size={12} />
+                    Filtrlar
                   </h3>
                   <button 
                     onClick={resetFilters} 
-                    className="text-gray-300 hover:text-red-600 transition-colors active:rotate-180 duration-500"
+                    className="text-gray-300 hover:text-red-600 transition-colors active:rotate-180 duration-500 text-sm flex items-center gap-1"
                     title="Filtrlarni tozalash"
                   >
-                    <FaUndoAlt size={14}/>
+                    <FaUndoAlt size={12}/>
+                    <span className="text-[10px] font-medium">Tozalash</span>
                   </button>
                 </div>
 
-                <div className="space-y-8 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
-                  {/* Kategoriyalar */}
+                <div className="space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar pr-2">
+                  {/* Categories */}
                   <div>
-                    <h4 className="text-[10px] font-black text-gray-400 uppercase mb-4 flex items-center justify-between">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase mb-3 flex items-center gap-2">
+                      <span className="w-1 h-4 bg-red-600 rounded-full"></span>
                       Kategoriyalar
                     </h4>
                     
@@ -667,111 +1024,194 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
                       onSelectCategory={handleCategorySelect}
                       expandedCategories={expandedCategories}
                       onToggleExpand={handleToggleExpand}
+                      productCountByCategory={productCountByCategory}
                     />
                   </div>
 
-                  {/* Narx */}
+                  {/* Price Range */}
                   <div>
-                    <h4 className="text-[10px] font-black text-gray-400 uppercase mb-4">
-                      Maksimal Narx
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase mb-3 flex items-center gap-2">
+                      <span className="w-1 h-4 bg-red-600 rounded-full"></span>
+                      Narx oralig'i
                     </h4>
-                    <input
-                      type="range"
-                      min="0"
-                      max={products.length > 0 ? Math.max(...products.map(p => Number(p.price_uzs || p.price || 0))) : 20000000}
-                      value={priceRange[1]}
-                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                      className="w-full accent-red-600 h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer"
-                    />
-                    <div className="mt-3 text-[11px] font-black text-red-600 bg-red-50 px-3 py-1.5 rounded-xl inline-block">
-                      {formatPrice(priceRange[1])}
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-gray-600">Min: {formatPrice(priceRange[0])}</span>
+                        <span className="text-xs font-bold text-red-600">Max: {formatPrice(priceRange[1])}</span>
+                      </div>
+                      
+                      <input
+                        type="range"
+                        min="0"
+                        max={maxPrice}
+                        step="1000"
+                        value={priceRange[1]}
+                        onChange={(e) => handlePriceChange(e.target.value)}
+                        className="w-full accent-red-600 h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                      />
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          max={priceRange[1]}
+                          value={priceRange[0]}
+                          onChange={(e) => setPriceRange([Math.min(parseInt(e.target.value) || 0, priceRange[1]), priceRange[1]])}
+                          className="w-full px-3 py-2 bg-gray-50 rounded-xl text-xs font-bold border border-gray-200 focus:border-red-600 outline-none"
+                          placeholder="Min"
+                        />
+                        <input
+                          type="number"
+                          min={priceRange[0]}
+                          max={maxPrice}
+                          value={priceRange[1]}
+                          onChange={(e) => setPriceRange([priceRange[0], Math.min(parseInt(e.target.value) || maxPrice, maxPrice)])}
+                          className="w-full px-3 py-2 bg-gray-50 rounded-xl text-xs font-bold border border-gray-200 focus:border-red-600 outline-none"
+                          placeholder="Max"
+                        />
+                      </div>
                     </div>
                   </div>
 
                   {/* Tags */}
                   <div>
-                    <h4 className="text-[10px] font-black text-gray-400 uppercase mb-4">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase mb-3 flex items-center gap-2">
+                      <span className="w-1 h-4 bg-red-600 rounded-full"></span>
                       Maxsus teglar
                     </h4>
+                    
                     <div className="flex flex-wrap gap-2">
-                      {['latest', 'popular', 'discount'].map(tag => (
+                      {tagOptions.map(tag => (
                         <button
-                          key={tag}
+                          key={tag.value}
                           onClick={() => setSelectedTags(prev =>
-                            prev.includes(tag) 
-                              ? prev.filter(t => t !== tag)
-                              : [...prev, tag]
+                            prev.includes(tag.value) 
+                              ? prev.filter(t => t !== tag.value)
+                              : [...prev, tag.value]
                           )}
-                          className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${
-                            selectedTags.includes(tag)
-                              ? 'bg-red-600 text-white shadow-lg'
-                              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                          className={`px-3 py-1.5 rounded-xl text-[9px] font-bold uppercase transition-all flex items-center gap-1 ${
+                            selectedTags.includes(tag.value)
+                              ? `${tag.color} text-white shadow-lg`
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                           }`}
                         >
-                          {tag === 'latest' && 'Yangi'}
-                          {tag === 'popular' && 'Ommabop'}
-                          {tag === 'discount' && 'Chegirma'}
+                          {selectedTags.includes(tag.value) && <FaCheck size={8} />}
+                          {tag.label}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Saralash */}
+                  {/* Sort */}
                   <div>
-                    <h4 className="text-[10px] font-black text-gray-400 uppercase mb-4">
-                      Tartib
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase mb-3 flex items-center gap-2">
+                      <span className="w-1 h-4 bg-red-600 rounded-full"></span>
+                      <FaSortAmountDown size={10} />
+                      Saralash
                     </h4>
+                    
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
-                      className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-[11px] font-black uppercase outline-none focus:ring-2 focus:ring-red-600/20"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-bold uppercase outline-none focus:ring-2 focus:ring-red-600/20 appearance-none cursor-pointer"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'right 12px center',
+                        backgroundSize: '14px'
+                      }}
                     >
-                      <option value="default">Odatiy</option>
-                      <option value="price_low">Arzonroq</option>
-                      <option value="price_high">Qimmatroq</option>
-                      <option value="newest">Eng yangi</option>
+                      {sortOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
+
+                  {/* Active Filters Summary */}
+                  {(selectedCategory !== 'all' || searchTerm || sortBy !== 'default' || selectedTags.length > 0) && (
+                    <div className="pt-4 border-t border-gray-100">
+                      <p className="text-[9px] font-bold text-gray-400 mb-2">Faol filtrlar:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedCategory !== 'all' && (
+                          <span className="text-[8px] bg-red-50 text-red-600 px-2 py-1 rounded-full font-bold">
+                            Kategoriya
+                          </span>
+                        )}
+                        {searchTerm && (
+                          <span className="text-[8px] bg-blue-50 text-blue-600 px-2 py-1 rounded-full font-bold truncate max-w-[100px]">
+                            "{searchTerm}"
+                          </span>
+                        )}
+                        {selectedTags.map(tag => (
+                          <span key={tag} className="text-[8px] bg-green-50 text-green-600 px-2 py-1 rounded-full font-bold">
+                            {tagOptions.find(t => t.value === tag)?.label}
+                          </span>
+                        ))}
+                        {sortBy !== 'default' && (
+                          <span className="text-[8px] bg-purple-50 text-purple-600 px-2 py-1 rounded-full font-bold">
+                            Saralash
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </aside>
 
-            {/* Mahsulotlar Gridi */}
+            {/* Products Grid */}
             <section className="flex-1">
-              <div className="flex items-center justify-between mb-8 px-2">
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                  Natijalar: <span className="text-red-600">{filteredProducts.length}</span> ta mahsulot
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <p className="text-xs font-bold text-gray-500">
+                  <span className="text-red-600 text-lg font-black">{filteredProducts.length}</span> ta mahsulot
                 </p>
                 
-                {/* Active filters */}
-                {(selectedCategory !== 'all' || searchTerm || sortBy !== 'default' || selectedTags.length > 0) && (
+                <div className="flex items-center gap-2">
+                  {loading && (
+                    <FaSpinner className="animate-spin text-red-600" size={14} />
+                  )}
+                  
+                  {/* Mobile view toggle */}
                   <button
-                    onClick={resetFilters}
-                    className="text-[9px] font-bold text-gray-400 hover:text-red-600 underline transition-colors"
+                    onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                    className="sm:hidden p-2 rounded-xl bg-gray-100 text-gray-600"
                   >
-                    Filtrlarni tozalash
+                    {viewMode === 'grid' ? <FaBars size={14} /> : <FaThLarge size={14} />}
                   </button>
-                )}
+                </div>
               </div>
 
-              {filteredProducts.length === 0 ? (
-                <div className="text-center py-24 bg-white rounded-[3rem] border-2 border-dashed border-gray-100 animate-fadeIn">
-                  <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <FaSearch className="text-gray-200 text-4xl" />
+              {loading ? (
+                <SkeletonLoader />
+              ) : filteredProducts.length === 0 ? (
+                <div className="text-center py-16 sm:py-24 bg-white rounded-3xl border-2 border-dashed border-gray-200 animate-fadeIn">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                    <FaSearch className="text-gray-300 text-3xl sm:text-4xl" />
                   </div>
-                  <h3 className="text-xl font-black uppercase italic tracking-tighter text-gray-800">
-                    Ma'lumot topilmadi
+                  <h3 className="text-lg sm:text-xl font-black uppercase italic tracking-tighter text-gray-800 mb-2">
+                    Mahsulot topilmadi
                   </h3>
+                  <p className="text-xs sm:text-sm text-gray-500 mb-6 max-w-md mx-auto px-4">
+                    Qidiruv so'rovingiz bo'yicha hech qanday mahsulot topilmadi. Boshqa filtr yoki qidiruv so'zini sinab ko'ring.
+                  </p>
                   <button 
                     onClick={resetFilters} 
-                    className="mt-6 px-8 py-4 bg-gray-950 text-white rounded-2xl font-black uppercase text-[10px] hover:bg-red-600 transition-all shadow-xl"
+                    className="px-6 sm:px-8 py-3 sm:py-4 bg-gray-950 text-white rounded-xl font-black uppercase text-[10px] sm:text-xs hover:bg-red-600 transition-all shadow-xl inline-flex items-center gap-2"
                   >
+                    <FaUndoAlt size={12} />
                     Filtrlarni tozalash
                   </button>
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
+                  <div className={
+                    viewMode === 'grid' 
+                      ? 'grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6' 
+                      : 'flex flex-col gap-4'
+                  }>
                     {currentProducts.map((product, idx) => (
                       <ProductCard
                         key={product.id}
@@ -780,17 +1220,18 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
                         onToggleFavorite={handleToggleFavorite}
                         onAddToCart={handleAddToCart}
                         index={idx}
+                        viewMode={viewMode}
                       />
                     ))}
                   </div>
 
                   {/* Pagination */}
                   {totalPages > 1 && (
-                    <div className="mt-20 flex justify-center items-center gap-2 sm:gap-3">
+                    <div className="mt-10 sm:mt-16 flex justify-center items-center gap-1 sm:gap-2">
                       <button 
                         disabled={page === 1}
                         onClick={() => handlePageChange(page - 1)}
-                        className="w-12 h-12 rounded-2xl border border-gray-100 bg-white text-gray-400 flex items-center justify-center disabled:opacity-20 active:scale-75 transition-all shadow-sm hover:border-red-200"
+                        className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl border border-gray-200 bg-white text-gray-500 flex items-center justify-center disabled:opacity-30 active:scale-95 transition-all shadow-sm hover:border-red-600 hover:text-red-600"
                         aria-label="Oldingi sahifa"
                       >
                         ←
@@ -800,13 +1241,13 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
                         <button
                           key={i}
                           disabled={p === '...'}
-                          onClick={() => p !== '...' && handlePageChange(p)}
-                          className={`w-12 h-12 rounded-2xl text-[11px] font-black transition-all active:scale-75 ${
+                          onClick={() => handlePageChange(p)}
+                          className={`min-w-[2rem] sm:min-w-[2.5rem] h-9 sm:h-11 px-2 sm:px-3 rounded-xl text-xs sm:text-sm font-bold transition-all active:scale-95 ${
                             page === p 
-                              ? 'bg-red-600 text-white shadow-xl shadow-red-200' 
+                              ? 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg shadow-red-200' 
                               : p === '...'
-                                ? 'bg-transparent cursor-default'
-                                : 'bg-white text-gray-400 border border-gray-100 hover:border-red-200'
+                                ? 'bg-transparent cursor-default text-gray-400'
+                                : 'bg-white text-gray-600 border border-gray-200 hover:border-red-600 hover:text-red-600'
                           }`}
                         >
                           {p}
@@ -816,7 +1257,7 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
                       <button 
                         disabled={page === totalPages}
                         onClick={() => handlePageChange(page + 1)}
-                        className="w-12 h-12 rounded-2xl border border-gray-100 bg-white text-gray-400 flex items-center justify-center disabled:opacity-20 active:scale-75 transition-all shadow-sm hover:border-red-200"
+                        className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl border border-gray-200 bg-white text-gray-500 flex items-center justify-center disabled:opacity-30 active:scale-95 transition-all shadow-sm hover:border-red-600 hover:text-red-600"
                         aria-label="Keyingi sahifa"
                       >
                         →
@@ -832,22 +1273,37 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
 
       <style>{`
         @keyframes slideUp {
-          from { opacity: 0; transform: translateY(40px); }
+          from { opacity: 0; transform: translateY(30px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .animate-slideUp { animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .animate-slideUp { animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
-        
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { 
-          background: #fee2e2; 
-          border-radius: 10px; 
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { 
-          background: #fecaca; 
+        .animate-fadeIn { animation: fadeIn 0.4s ease-out; }
+        
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .shimmer {
+          animation: shimmer 2s infinite;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #fee2e2;
+          border-radius: 20px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #fecaca;
         }
         
         input[type=range] {
@@ -855,16 +1311,33 @@ const AllProducts = ({ addToCart, favorites = [], toggleFavorite }) => {
         }
         input[type=range]::-webkit-slider-thumb {
           -webkit-appearance: none;
-          width: 16px;
-          height: 16px;
+          width: 18px;
+          height: 18px;
           background: #ef4444;
           border-radius: 50%;
           cursor: pointer;
           box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
           transition: all 0.2s;
+          border: 2px solid white;
         }
         input[type=range]::-webkit-slider-thumb:hover {
           transform: scale(1.2);
+          background: #dc2626;
+        }
+        
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+        
+        @media (max-width: 640px) {
+          .animate-slideUp {
+            animation-duration: 0.4s;
+          }
         }
       `}</style>
     </>
