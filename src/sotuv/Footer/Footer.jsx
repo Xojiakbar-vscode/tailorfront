@@ -1,27 +1,18 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   FaMapMarkerAlt, FaPhone, FaTelegram, FaInstagram, 
   FaYoutube, FaChevronUp, FaShieldAlt, FaTruck, 
-  FaHeadset, FaStar, FaFacebookF, FaWhatsapp, 
-  FaRegEnvelope, FaUser, FaClock
+  FaHeadset, FaStar, FaFacebookF, FaClock
 } from 'react-icons/fa';
 import { IoLocationSharp } from "react-icons/io5";
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API_URL = "https://tailorback2025-production.up.railway.app/api/contacts";
-
 const Footer = () => {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [showMap, setShowMap] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [status, setStatus] = useState({ type: null, message: "" });
-  const [formData, setFormData] = useState({ full_name: "", phone: "", message: "" });
-  
-  const location = useLocation();
   const currentYear = new Date().getFullYear();
 
-  // Scroll visibility logic
   useEffect(() => {
     const handleScroll = () => setShowBackToTop(window.scrollY > 400);
     window.addEventListener('scroll', handleScroll);
@@ -29,37 +20,6 @@ const Footer = () => {
   }, []);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  const handleInputChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (status.type) setStatus({ type: null, message: "" });
-  }, [status.type]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSending(true);
-
-    try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        setStatus({ type: "success", message: "Xabaringiz yuborildi!" });
-        setFormData({ full_name: "", phone: "", message: "" });
-      } else {
-        throw new Error();
-      }
-    } catch {
-      setStatus({ type: "error", message: "Xatolik! Qaytadan urinib ko'ring." });
-    } finally {
-      setIsSending(false);
-      setTimeout(() => setStatus({ type: null, message: "" }), 5000);
-    }
-  };
 
   const navSections = useMemo(() => [
     {
@@ -94,13 +54,12 @@ const Footer = () => {
   const features = [
     { icon: FaTruck, title: "Yetkazib berish", desc: "O'zbekiston bo'ylab", color: "text-blue-600" },
     { icon: FaShieldAlt, title: "Kafolat", desc: "Sifatli mahsulotlar", color: "text-green-600" },
-    { icon: FaHeadset, title: "Qo'llab-quvvatlash", desc: "24/7 aloqadamiz", color: "text-purple-600" },
+    { icon: FaHeadset, title: "Yordam", desc: "24/7 aloqadamiz", color: "text-purple-600" },
     { icon: FaStar, title: "Premium", desc: "Professional tanlov", color: "text-yellow-600" }
   ];
 
   return (
     <footer className="bg-white text-gray-700 pt-16 border-t border-gray-100 relative">
-      {/* Back to Top */}
       <AnimatePresence>
         {showBackToTop && (
           <motion.button
@@ -127,42 +86,24 @@ const Footer = () => {
 
         {/* 2. Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
-          {/* Brand & Contacts */}
           <div className="lg:col-span-4 space-y-6">
             <Link to="/" className="text-3xl font-black italic tracking-tighter">
               TAILOR<span className="text-red-600">SHOP</span>
             </Link>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Professional tikuvchilik uskunalari va butlovchi qismlari yetkazib beruvchi yetakchi do'kon.
+              Professional tikuvchilik mahsulotlari va butlovchi qismlari yetkazib beruvchi yetakchi do'kon. Sifat va ishonch kafolati.
             </p>
-            
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 group">
-                <FaMapMarkerAlt className="text-red-600 group-hover:scale-110 transition-transform" />
-                <span className="text-sm">Namangan sh., Kosonsoy ko'chasi, 45-uy</span>
-              </div>
-              <div className="flex items-center gap-3 group">
-                <FaPhone className="text-red-600 group-hover:scale-110 transition-transform" />
-                <a href="tel:+998913560408" className="text-sm font-bold hover:text-red-600">+998 91 356 04 08</a>
-              </div>
-              <div className="flex items-center gap-3">
-                <FaClock className="text-red-600" />
-                <span className="text-sm text-gray-500">Du - Sha: 09:00 - 20:00</span>
-              </div>
-            </div>
-
             <div className="flex gap-3">
               {[FaTelegram, FaInstagram, FaYoutube, FaFacebookF].map((Icon, i) => (
-                <a key={i} href="#" className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-red-600 hover:text-white transition-all shadow-sm">
+                <a key={i} href="#" className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-red-600 hover:text-white transition-all">
                   <Icon size={18} />
                 </a>
               ))}
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <div className="lg:col-span-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-8">
-            {navSections.slice(0, 2).map((section, idx) => (
+          <div className="lg:col-span-5 grid grid-cols-2 sm:grid-cols-3 gap-8">
+            {navSections.map((section, idx) => (
               <div key={idx}>
                 <h4 className="font-black text-xs uppercase tracking-[0.2em] mb-6 text-gray-900">{section.title}</h4>
                 <ul className="space-y-3">
@@ -176,50 +117,27 @@ const Footer = () => {
             ))}
           </div>
 
-          {/* Contact Form */}
-          <div className="lg:col-span-4 bg-gray-50 rounded-3xl p-6 shadow-inner">
-            <h4 className="font-black text-xs uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-              <FaRegEnvelope className="text-red-600" /> Savollaringiz bormi?
-            </h4>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="relative">
-                <FaUser className="absolute left-4 top-4 text-gray-400" size={12} />
-                <input 
-                  type="text" name="full_name" placeholder="Ismingiz" required
-                  value={formData.full_name} onChange={handleInputChange}
-                  className="w-full bg-white border-0 rounded-xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-red-500 outline-none"
-                />
+          <div className="lg:col-span-3 space-y-4">
+            <h4 className="font-black text-xs uppercase tracking-[0.2em] mb-6 text-gray-900">Kontaktlar</h4>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <FaMapMarkerAlt className="text-red-600 mt-1 flex-shrink-0" />
+                <span className="text-sm">Namangan sh. Istiqlol ko'chasi, 1</span>
               </div>
-              <div className="relative">
-                <FaPhone className="absolute left-4 top-4 text-gray-400" size={12} />
-                <input 
-                  type="tel" name="phone" placeholder="Telefon" required
-                  value={formData.phone} onChange={handleInputChange}
-                  className="w-full bg-white border-0 rounded-xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-red-500 outline-none"
-                />
+              <div className="flex items-center gap-3">
+                <FaPhone className="text-red-600 flex-shrink-0" />
+                <a href="tel:+998913560408" className="text-sm font-bold hover:text-red-600">+998 91 356 04 08</a>
               </div>
-              <textarea 
-                name="message" rows="2" placeholder="Xabar..." required
-                value={formData.message} onChange={handleInputChange}
-                className="w-full bg-white border-0 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-red-500 outline-none resize-none"
-              />
-              <button 
-                disabled={isSending}
-                className="w-full bg-red-600 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-200"
-              >
-                {isSending ? "Yuborilmoqda..." : "Yuborish"}
-              </button>
-              {status.type && (
-                <p className={`text-[10px] text-center font-bold ${status.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-                  {status.message}
-                </p>
-              )}
-            </form>
+              <div className="flex items-center gap-3">
+                <FaClock className="text-red-600 flex-shrink-0" />
+                <span className="text-sm">Du - Sha: 09:00 - 18:00</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* 3. Map Section (Optional but integrated) */}
-        <div className="w-full h-[300px] rounded-3xl overflow-hidden mb-12 border border-gray-100 shadow-sm relative">
+        {/* 3. Map Section */}
+        <div className="w-full h-[250px] rounded-3xl overflow-hidden mb-12 border border-gray-100 relative">
            {!showMap ? (
               <div className="absolute inset-0 bg-gray-900 flex flex-col items-center justify-center text-white p-4">
                 <IoLocationSharp className="text-red-500 text-5xl mb-4 animate-bounce" />
@@ -232,7 +150,7 @@ const Footer = () => {
               </div>
            ) : (
             <iframe 
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3012.000000000000!2d71.5!3d41.0!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDHCsDAwJzAwLjAiTiA3McKwMzAnMDAuMCJF!5e0!3m2!1suz!2s!4v1234567890"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3012.345678901234!2d71.672345!3d41.001234!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDHCsDAwJzA0LjQiTiA3McKwNDAnMjAuNCJF!5e0!3m2!1suz!2s!4v1234567890123"
               className="w-full h-full grayscale border-0"
               allowFullScreen loading="lazy"
               title="TailorShop Location"
@@ -241,13 +159,10 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="bg-gray-50 border-t  border-gray-100 py-8">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-gray-500 text-center  md:text-left">
-            © {currentYear} <span className="font-bold text-gray-800 tracking-tight">TailorShop.uz</span>. Barcha huquqlar himoyalangan.
-          </p>
-        </div>
+      <div className="bg-gray-50 border-t border-gray-100 py-8 text-center">
+        <p className="text-xs text-gray-500">
+          © {currentYear} <span className="font-bold text-gray-800">TailorShop.uz</span>. Barcha huquqlar himoyalangan.
+        </p>
       </div>
     </footer>
   );

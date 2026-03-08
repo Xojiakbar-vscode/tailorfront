@@ -19,7 +19,22 @@ const ProductDetail = lazy(() => import("./components/ProductCard/ProductDetail"
 const CategoryDetail = lazy(() => import("./sotuv/Filters/FilterDetail"));
 const Favorites = lazy(() => import("./sotuv/Favorites/Favorites"));
 const SearchPage = lazy(() => import("./sotuv/Search/SearchPage"));
-const Footer =lazy(()=> import("./sotuv/Footer/Footer"))
+const Footer = lazy(() => import("./sotuv/Footer/Footer"));
+
+// Yangi sahifalar
+const SalesPage = lazy(() => import("./components/pages/SalesPage"));
+const NewProductsPage = lazy(() => import("./components/pages/NewProductsPage"));
+const AboutPage = lazy(() => import("./components/pages/AboutPage"));
+const ContactPage = lazy(() => import("./components/pages/ContactPage"));
+const FAQPage = lazy(() => import("./components/pages/FAQPage"));
+const DeliveryPage = lazy(() => import("./components/pages/DeliveryPage"));
+const PaymentPage = lazy(() => import("./components/pages/PaymentPage"));
+const WarrantyPage = lazy(() => import("./components/pages/WarrantyPage"));
+const ReturnPage = lazy(() => import("./components/pages/ReturnPage"));
+const PrivacyPage = lazy(() => import("./components/pages/PrivacyPage"));
+const NotFoundPage = lazy(() => import("./components/pages/NotFoundPage"));
+
+
 // Loading component
 const LoadingSpinner = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white">
@@ -212,6 +227,7 @@ const App = () => {
           />
           
           <Routes>
+            {/* Asosiy sahifalar */}
             <Route 
               path="/" 
               element={
@@ -304,9 +320,74 @@ const App = () => {
                 />
               } 
             />
+
+            {/* Yangi sahifalar - Xarid bo'limi */}
+            <Route 
+              path="/sales" 
+              element={
+                <SalesPage 
+                  addToCart={addToCart}
+                  favorites={favorites}
+                  toggleFavorite={toggleFavorite}
+                />
+              } 
+            />
             
+            <Route 
+              path="/new" 
+              element={
+                <NewProductsPage 
+                  addToCart={addToCart}
+                  favorites={favorites}
+                  toggleFavorite={toggleFavorite}
+                />
+              } 
+            />
+
+            {/* Ma'lumotlar bo'limi */}
+            <Route 
+              path="/about" 
+              element={<AboutPage />} 
+            />
+            
+            <Route 
+              path="/delivery" 
+              element={<DeliveryPage />} 
+            />
+            
+            <Route 
+              path="/payment" 
+              element={<PaymentPage />} 
+            />
+            
+            <Route 
+              path="/privacy" 
+              element={<PrivacyPage />} 
+            />
+
+            {/* Yordam bo'limi */}
+            <Route 
+              path="/faq" 
+              element={<FAQPage />} 
+            />
+            
+            <Route 
+              path="/return" 
+              element={<ReturnPage />} 
+            />
+            
+            <Route 
+              path="/warranty" 
+              element={<WarrantyPage />} 
+            />
+            
+            <Route 
+              path="/contact" 
+              element={<ContactPage />} 
+            />
+
             {/* 404 route */}
-            <Route path="*" element={<div>404 - Page not found</div>} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
           
           <FooterNavbar 
@@ -314,7 +395,7 @@ const App = () => {
             favorites={favorites} 
             className="navbarfooter" 
           />
-          <Footer/>
+          <Footer />
         </Suspense>
       </Router>
     </ErrorBoundary>
