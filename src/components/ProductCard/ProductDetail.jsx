@@ -12,7 +12,7 @@ import {
   FaCheck,
   FaCartShopping,
   FaPercent,
-  
+
   FaWhatsapp,
   FaTelegram,
   FaFacebookF,
@@ -27,7 +27,7 @@ import {
   FaChevronRight,
   FaMinus,
   FaPlus,
-  
+
   FaStore,
   FaCreditCard,
   FaRotateLeft,
@@ -52,10 +52,10 @@ const formatPrice = (price) => {
 
 const calculateFinalPrice = (product) => {
   if (!product) return 0;
-  
+
   let price = Number(product.price_uzs || product.price || 0);
   const discount = product.discount;
-  
+
   if (discount && discount.is_active !== false) {
     if (discount.percent) {
       price = price * (1 - Math.min(Number(discount.percent), 100) / 100);
@@ -63,29 +63,29 @@ const calculateFinalPrice = (product) => {
       price = Math.max(0, price - Number(discount.amount));
     }
   }
-  
+
   return Math.round(price);
 };
 
 const getDiscountPercentage = (product) => {
   if (!product) return 0;
-  
+
   const originalPrice = Number(product.price_uzs || product.price || 0);
   const finalPrice = calculateFinalPrice(product);
-  
+
   if (originalPrice > 0 && finalPrice < originalPrice) {
     return Math.round(((originalPrice - finalPrice) / originalPrice) * 100);
   }
-  
+
   return product.discount?.percent || 0;
 };
 
 const getDiscountedAmount = (product) => {
   if (!product) return 0;
-  
+
   const originalPrice = Number(product.price_uzs || product.price || 0);
   const finalPrice = calculateFinalPrice(product);
-  
+
   return originalPrice - finalPrice;
 };
 
@@ -98,20 +98,20 @@ const PremiumImageGallery = ({ images, productName, onImageChange }) => {
   const galleryRef = useRef(null);
   const zoomRef = useRef(null);
 
-  const imageList = useMemo(() => 
+  const imageList = useMemo(() =>
     images.length > 0 ? images : [FALLBACK_IMAGE],
     [images]
   );
 
   useEffect(() => {
     if (!imageList.length) return;
-    
+
     const interval = setInterval(() => {
       if (!isZoomed && !isFullscreen) {
         setCurrentIndex(prev => (prev + 1) % imageList.length);
       }
     }, 5000);
-    
+
     return () => clearInterval(interval);
   }, [imageList.length, isZoomed, isFullscreen]);
 
@@ -127,17 +127,17 @@ const PremiumImageGallery = ({ images, productName, onImageChange }) => {
 
   const handleMouseMove = useCallback((e) => {
     if (!zoomRef.current || !isZoomed) return;
-    
+
     const rect = zoomRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    
+
     setZoomPosition({ x, y });
   }, [isZoomed]);
 
   const toggleFullscreen = useCallback(() => {
     if (!galleryRef.current) return;
-    
+
     if (!isFullscreen) {
       if (galleryRef.current.requestFullscreen) {
         galleryRef.current.requestFullscreen();
@@ -154,18 +154,18 @@ const PremiumImageGallery = ({ images, productName, onImageChange }) => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
-    
+
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
   return (
-    <div 
+    <div
       ref={galleryRef}
       className="relative w-full h-full bg-gradient-to-br from-gray-50 to-white rounded-3xl overflow-hidden group"
     >
       {/* Main Image */}
-      <div 
+      <div
         ref={zoomRef}
         className="relative w-full h-full cursor-crosshair"
         onMouseEnter={() => setIsZoomed(true)}
@@ -176,9 +176,8 @@ const PremiumImageGallery = ({ images, productName, onImageChange }) => {
         <img
           src={imageList[currentIndex]}
           alt={`${productName} - ${currentIndex + 1}`}
-          className={`w-full h-full object-contain transition-all duration-500 ${
-            isZoomed ? 'scale-150' : 'scale-100'
-          }`}
+          className={`w-full h-full object-contain transition-all duration-500 ${isZoomed ? 'scale-150' : 'scale-100'
+            }`}
           style={isZoomed ? {
             transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`
           } : {}}
@@ -216,11 +215,10 @@ const PremiumImageGallery = ({ images, productName, onImageChange }) => {
             <button
               key={idx}
               onClick={() => setCurrentIndex(idx)}
-              className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${
-                idx === currentIndex 
-                  ? 'border-red-600 shadow-xl scale-110' 
+              className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${idx === currentIndex
+                  ? 'border-red-600 shadow-xl scale-110'
                   : 'border-transparent opacity-60 hover:opacity-100'
-              }`}
+                }`}
             >
               <img src={img} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover" />
             </button>
@@ -378,11 +376,11 @@ const RelatedProductCard = ({ product, addToCart, toggleFavorite, isFavorite }) 
             </div>
           )}
         </div>
-        
+
         <h3 className="font-black text-gray-900 text-xs mb-2 line-clamp-2 group-hover:text-red-600 transition-colors min-h-[2.5rem]">
           {product.name}
         </h3>
-        
+
         <div className="flex items-center justify-between">
           <div>
             <span className="text-red-600 font-black text-sm">
@@ -410,7 +408,7 @@ const RelatedProductCard = ({ product, addToCart, toggleFavorite, isFavorite }) 
           </button>
         </div>
       </Link>
-      
+
       <button
         onClick={(e) => {
           e.preventDefault();
@@ -428,7 +426,7 @@ const RelatedProductCard = ({ product, addToCart, toggleFavorite, isFavorite }) 
 const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
+
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -440,36 +438,36 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
   const [reviewForm, setReviewForm] = useState({ name: "", rating: 5, comment: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
-  
+
   const abortControllerRef = useRef();
   const isMounted = useRef(true);
 
-  const isFavorite = useMemo(() => 
+  const isFavorite = useMemo(() =>
     favorites.some((fav) => fav.id === parseInt(id)),
     [favorites, id]
   );
 
-  const finalPrice = useMemo(() => 
+  const finalPrice = useMemo(() =>
     calculateFinalPrice(product),
     [product]
   );
 
-  const originalPrice = useMemo(() => 
+  const originalPrice = useMemo(() =>
     Number(product?.price_uzs || product?.price || 0),
     [product]
   );
 
-  const hasDiscount = useMemo(() => 
+  const hasDiscount = useMemo(() =>
     product?.discount?.is_active && finalPrice < originalPrice,
     [product, finalPrice, originalPrice]
   );
 
-  const discountPercentage = useMemo(() => 
+  const discountPercentage = useMemo(() =>
     getDiscountPercentage(product),
     [product]
   );
 
-  const discountedAmount = useMemo(() => 
+  const discountedAmount = useMemo(() =>
     getDiscountedAmount(product),
     [product]
   );
@@ -483,19 +481,19 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
   // Fetch product data
   useEffect(() => {
     isMounted.current = true;
-    
+
     const fetchData = async () => {
       try {
         if (abortControllerRef.current) {
           abortControllerRef.current.abort();
         }
-        
+
         abortControllerRef.current = new AbortController();
         const signal = abortControllerRef.current.signal;
 
         const cacheKey = `product_${id}`;
         const cached = cache.get(cacheKey);
-        
+
         if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
           if (isMounted.current) {
             setProduct(cached.data.product);
@@ -520,15 +518,15 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
 
         if (prodData && prodData.is_active !== false) {
           setProduct(prodData);
-          
+
           const productReviews = revData.filter(rev => rev.product_id === parseInt(id));
           setReviews(productReviews);
-          
+
           // Get related products (same category, exclude current)
           const related = allProdsData
-            .filter(p => 
-              p.category_id === prodData.category_id && 
-              p.id !== prodData.id && 
+            .filter(p =>
+              p.category_id === prodData.category_id &&
+              p.id !== prodData.id &&
               p.is_active !== false
             )
             .slice(0, 8);
@@ -582,7 +580,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
 
   const handleAddToCart = useCallback(() => {
     if (!product) return;
-    
+
     addToCart({
       id: product.id,
       name: product.name,
@@ -594,11 +592,8 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
       size: selectedSize,
       discount: hasDiscount ? discountPercentage : null
     });
-    
-    toast.success(`${quantity} ta mahsulot savatga qo'shildi`, {
-      icon: '🛒',
-      duration: 3000
-    });
+
+
   }, [product, finalPrice, originalPrice, quantity, selectedColor, selectedSize, hasDiscount, discountPercentage, addToCart]);
 
   const handleBuyNow = useCallback(() => {
@@ -609,7 +604,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       const res = await fetch(`${API_BASE}/reviews`, {
         method: "POST",
@@ -622,15 +617,15 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
           createdAt: new Date().toISOString()
         })
       });
-      
+
       if (res.ok) {
         setReviewForm({ name: "", rating: 5, comment: "" });
-        
+
         // Refresh reviews
         const revRes = await fetch(`${API_BASE}/reviews`);
         const revData = await revRes.json();
         setReviews(revData.filter(rev => rev.product_id === parseInt(id)));
-        
+
         toast.success('Fikringiz uchun rahmat!');
       }
     } catch (err) {
@@ -670,8 +665,8 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
           <p className="text-gray-500 mb-8">
             Siz qidirgan mahsulot mavjud emas yoki o'chirilgan bo'lishi mumkin.
           </p>
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="inline-flex items-center gap-3 bg-gray-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-red-600 transition-all shadow-xl"
           >
             <FaArrowLeft /> Bosh sahifaga qaytish
@@ -696,7 +691,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
         <meta property="product:price:amount" content={finalPrice.toString()} />
         <meta property="product:price:currency" content="UZS" />
         <link rel="canonical" href={`https://tailorshop.uz/product/${id}`} />
-        
+
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
@@ -715,7 +710,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
               "url": `https://tailorshop.uz/product/${id}`,
               "priceCurrency": "UZS",
               "price": finalPrice,
-              "priceValidUntil": product.discount?.valid_until || new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+              "priceValidUntil": product.discount?.valid_until || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
               "itemCondition": "https://schema.org/NewCondition",
               "availability": "https://schema.org/InStock"
             },
@@ -740,7 +735,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
         </script>
       </Helmet>
 
-      <Toaster 
+      <Toaster
         position="top-right"
         toastOptions={{
           duration: 3000,
@@ -758,7 +753,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
 
       <div className="bg-[#fcfcfc] min-h-screen pb-20">
         <div className="max-w-7xl mx-auto px-4 pt-6">
-          
+
           {/* Breadcrumbs */}
           <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 mb-6 overflow-x-auto pb-2 no-scrollbar">
             <Link to="/" className="hover:text-red-600 whitespace-nowrap">Bosh sahifa</Link>
@@ -778,12 +773,12 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
 
           {/* Main Product Section */}
           <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 mb-16">
-            
+
             {/* Left: Image Gallery */}
             <div className="lg:col-span-7">
               <div className="sticky top-24 aspect-square rounded-3xl overflow-hidden bg-white shadow-2xl shadow-gray-200/50">
-                <PremiumImageGallery 
-                  images={imageUrls} 
+                <PremiumImageGallery
+                  images={imageUrls}
                   productName={product.name}
                 />
               </div>
@@ -792,7 +787,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
             {/* Right: Product Info */}
             <div className="lg:col-span-5">
               <div className="sticky top-24 space-y-6">
-                
+
                 {/* Badges */}
                 <div className="flex items-center gap-3 flex-wrap">
                   {hasDiscount && (
@@ -817,7 +812,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                   <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 mb-4 leading-tight tracking-tight">
                     {product.name}
                   </h1>
-                  
+
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1">
                       <div className="flex text-amber-400 text-sm">
@@ -828,7 +823,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                       <span className="text-gray-400 text-xs font-medium ml-1">({averageRating})</span>
                     </div>
                     <span className="text-gray-300">|</span>
-                    <button 
+                    <button
                       onClick={() => setActiveTab('reviews')}
                       className="text-gray-500 hover:text-red-600 text-xs font-bold transition-colors"
                     >
@@ -849,7 +844,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                       </span>
                     )}
                   </div>
-                  
+
                   <div className="flex items-end gap-4">
                     <div>
                       <span className="text-4xl md:text-5xl font-black text-red-600 leading-none">
@@ -880,8 +875,8 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider min-w-[80px]">
                       Miqdori:
                     </span>
-                    <QuantitySelector 
-                      quantity={quantity} 
+                    <QuantitySelector
+                      quantity={quantity}
                       onChange={setQuantity}
                       max={product.quantity || 99}
                     />
@@ -918,7 +913,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                       </div>
                     </div>
                   )}
-                  
+
                   {product.min_order && (
                     <div className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100">
                       <div className="w-10 h-10 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center">
@@ -926,7 +921,9 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                       </div>
                       <div>
                         <span className="text-[8px] font-black text-gray-400 uppercase tracking-wider">Min. buyurtma</span>
-                        <p className="text-xs font-black text-gray-900">{product.min_order} {product.unit}</p>
+                        <p className="text-xs font-black text-gray-900">
+                          {String(product.min_order).split(".")[0]} {product.unit}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -943,7 +940,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                       <p className="text-xs font-black text-gray-900">1-3 kun</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100">
                     <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
                       <FaShieldHeart size={16} />
@@ -977,11 +974,10 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all relative ${
-                    activeTab === tab.id 
-                      ? 'text-red-600 bg-red-50' 
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all relative ${activeTab === tab.id
+                      ? 'text-red-600 bg-red-50'
                       : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   {tab.icon}
                   {tab.label}
@@ -1010,7 +1006,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                         </p>
                       )}
                     </div>
-                    
+
                     {/* Key Features */}
                     <div className="grid grid-cols-2 gap-4 pt-4">
                       {[
@@ -1028,7 +1024,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 rounded-3xl p-8 border border-gray-100">
                     <h4 className="text-sm font-black text-gray-900 mb-6 flex items-center gap-2">
                       <FaShieldHalved className="text-red-600" />
@@ -1104,7 +1100,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                       </div>
                     </dl>
                   </div>
-                  
+
                   <div className="bg-white rounded-3xl p-8 border border-gray-100">
                     <h4 className="text-sm font-black text-gray-900 mb-6">Qo'shimcha ma'lumotlar</h4>
                     <div className="space-y-4">
@@ -1138,7 +1134,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                         <FaRegCommentDots className="text-red-600" />
                         Fikr qoldirish
                       </h4>
-                      
+
                       <form onSubmit={handleReviewSubmit} className="space-y-4">
                         <div>
                           <label className="text-[8px] font-black text-gray-400 uppercase block mb-2">
@@ -1153,22 +1149,21 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                             required
                           />
                         </div>
-                        
+
                         <div>
                           <label className="text-[8px] font-black text-gray-400 uppercase block mb-2">
                             Baholang
                           </label>
                           <div className="flex gap-2">
-                            {[5,4,3,2,1].map(rating => (
+                            {[5, 4, 3, 2, 1].map(rating => (
                               <button
                                 key={rating}
                                 type="button"
                                 onClick={() => setReviewForm({ ...reviewForm, rating })}
-                                className={`w-12 h-12 rounded-xl border-2 transition-all ${
-                                  reviewForm.rating === rating
+                                className={`w-12 h-12 rounded-xl border-2 transition-all ${reviewForm.rating === rating
                                     ? 'border-red-600 bg-red-50 text-red-600'
                                     : 'border-gray-200 text-gray-400 hover:border-red-300'
-                                }`}
+                                  }`}
                               >
                                 <div className="flex flex-col items-center">
                                   <span className="text-xs font-black">{rating}</span>
@@ -1178,7 +1173,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                             ))}
                           </div>
                         </div>
-                        
+
                         <div>
                           <label className="text-[8px] font-black text-gray-400 uppercase block mb-2">
                             Fikringiz
@@ -1192,7 +1187,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                             required
                           />
                         </div>
-                        
+
                         <button
                           type="submit"
                           disabled={isSubmitting}
@@ -1235,14 +1230,14 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                     Sizga ham yoqishi mumkin
                   </h2>
                 </div>
-                <Link 
+                <Link
                   to={`/category/${product.category_id}`}
                   className="flex items-center gap-2 text-gray-900 font-black text-xs uppercase hover:text-red-600 transition-colors"
                 >
                   Hammasini ko'rish <FaChevronRight size={10} />
                 </Link>
               </div>
-              
+
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {relatedProducts.map((item) => (
                   <RelatedProductCard
