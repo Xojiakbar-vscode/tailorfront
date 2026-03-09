@@ -601,39 +601,41 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
     navigate('/cart');
   }, [handleAddToCart, navigate]);
 
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+const handleReviewSubmit = async (e) => {
+  e.preventDefault();
+  setIsSubmitting(true);
 
-    try {
-      const res = await fetch(`${API_BASE}/reviews`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          product_id: parseInt(id),
-          name: reviewForm.name || 'Anonim',
-          rating: parseInt(reviewForm.rating),
-          comment: reviewForm.comment
-        })
-      });
+  try {
+    const res = await fetch(`${API_BASE}/reviews`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        product_id: Number(id),
+        name: reviewForm.name || "Anonim",
+        rating: Number(reviewForm.rating),
+        comment: reviewForm.comment
+      })
+    });
 
-      if (res.ok) {
-        setReviewForm({ name: "", rating: 5, comment: "" });
-
-        // Refresh reviews
-        const revRes = await fetch(`${API_BASE}/reviews/product/${id}`);
-        const revData = await revRes.json();
-
-        setReviews(revData.reviews || []);
-
-        toast.success('Fikringiz uchun rahmat!');
-      }
-    } catch (err) {
-      toast.error('Sharh yuborishda xatolik');
-    } finally {
-      setIsSubmitting(false);
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "Xatolik");
     }
-  };
+
+    setReviewForm({ name: "", rating: 5, comment: "" });
+
+    const revRes = await fetch(`${API_BASE}/reviews/product/${id}`);
+    const revData = await revRes.json();
+
+    setReviews(revData.reviews || []);
+
+    toast.success("Fikringiz uchun rahmat!");
+  } catch (err) {
+    toast.error(err.message || "Sharh yuborishda xatolik");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   // Loading state
   if (loading) {
