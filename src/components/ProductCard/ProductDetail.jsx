@@ -216,8 +216,8 @@ const PremiumImageGallery = ({ images, productName, onImageChange }) => {
               key={idx}
               onClick={() => setCurrentIndex(idx)}
               className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${idx === currentIndex
-                  ? 'border-red-600 shadow-xl scale-110'
-                  : 'border-transparent opacity-60 hover:opacity-100'
+                ? 'border-red-600 shadow-xl scale-110'
+                : 'border-transparent opacity-60 hover:opacity-100'
                 }`}
             >
               <img src={img} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover" />
@@ -623,7 +623,8 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
         // Refresh reviews
         const revRes = await fetch(`${API_BASE}/reviews/product/${id}`);
         const revData = await revRes.json();
-        setReviews(revData.filter(rev => rev.product_id === parseInt(id)));
+
+        setReviews(revData.reviews || []);
 
         toast.success('Fikringiz uchun rahmat!');
       }
@@ -974,8 +975,8 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all relative ${activeTab === tab.id
-                      ? 'text-red-600 bg-red-50'
-                      : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                    ? 'text-red-600 bg-red-50'
+                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
                     }`}
                 >
                   {tab.icon}
@@ -1160,8 +1161,8 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
                                 type="button"
                                 onClick={() => setReviewForm({ ...reviewForm, rating })}
                                 className={`w-12 h-12 rounded-xl border-2 transition-all ${reviewForm.rating === rating
-                                    ? 'border-red-600 bg-red-50 text-red-600'
-                                    : 'border-gray-200 text-gray-400 hover:border-red-300'
+                                  ? 'border-red-600 bg-red-50 text-red-600'
+                                  : 'border-gray-200 text-gray-400 hover:border-red-300'
                                   }`}
                               >
                                 <div className="flex flex-col items-center">
