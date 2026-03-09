@@ -613,8 +613,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
           product_id: parseInt(id),
           name: reviewForm.name || 'Anonim',
           rating: parseInt(reviewForm.rating),
-          comment: reviewForm.comment,
-          createdAt: new Date().toISOString()
+          comment: reviewForm.comment
         })
       });
 
@@ -622,7 +621,7 @@ const ProductDetail = ({ addToCart, favorites = [], toggleFavorite }) => {
         setReviewForm({ name: "", rating: 5, comment: "" });
 
         // Refresh reviews
-        const revRes = await fetch(`${API_BASE}/reviews`);
+        const revRes = await fetch(`${API_BASE}/reviews/product/${id}`);
         const revData = await revRes.json();
         setReviews(revData.filter(rev => rev.product_id === parseInt(id)));
 
