@@ -586,7 +586,7 @@ const CategorySection = React.memo(({
         {/* Category Link Button */}
         <div className="flex justify-center mt-6">
           <Link 
-            to={`/category/${category.id}`} 
+            to={`/category/${category.slug}`} 
             className="group flex items-center gap-2 bg-gray-50 hover:bg-slate-900 text-slate-900 hover:text-white px-8 py-3.5 rounded-full border border-gray-200 transition-all duration-300 active:scale-95 shadow-sm hover:shadow-xl"
           >
             <span className="text-[10px] font-black uppercase tracking-[0.2em]">
