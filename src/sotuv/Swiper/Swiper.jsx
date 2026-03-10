@@ -3,7 +3,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import axios from "axios";
 
-// Swiper style
+// Swiper styles
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -16,14 +16,18 @@ export default function Slider() {
   useEffect(() => {
     const fetchBanners = async () => {
       try {
-        const response = await axios.get("https://tailorback2025-production.up.railway.app/api/banners");
-        
-        // BU YERDA FILTRLASH: Faqat statusi true bo'lganlarni saqlaymiz
-        const activeBanners = response.data.filter(item => item.status === true);
-        
-        setBanners(activeBanners); 
-      } catch (error) {
-        console.error("Xatolik yuz berdi:", error);
+        const res = await axios.get(
+          "https://tailorback2025-production.up.railway.app/api/banners"
+        );
+
+        if (Array.isArray(res.data)) {
+          const activeBanners = res.data.filter(
+            (item) => item.status === true
+          );
+          setBanners(activeBanners);
+        }
+      } catch (err) {
+        console.error("Bannerlarni yuklashda xatolik:", err);
       } finally {
         setLoading(false);
       }
@@ -33,24 +37,28 @@ export default function Slider() {
   }, []);
 
   if (loading) {
-    return <div style={{ textAlign: "center", padding: "20px" }}>Yuklanmoqda...</div>;
+    return (
+      <div style={{ textAlign: "center", padding: "30px" }}>
+        Yuklanmoqda...
+      </div>
+    );
   }
 
-  // Agar filtrdan keyin rasm qolmasa, slayderni ko'rsatmaymiz
-  if (banners.length === 0) {
-    return null; 
-  }
+  if (!banners.length) return null;
 
   return (
-    <div style={{ width: "90%", margin: "0 auto" }} data-aos="fade-down">
+    <div style={{ width: "90%", margin: "0 auto" }}>
       <Swiper
         modules={[Autoplay, Navigation, Pagination]}
         spaceBetween={20}
         slidesPerView={1}
         loop={banners.length > 1}
+        observer={true}
+        observeParents={true}
         autoplay={{
-          delay: 3000,
+          delay: 3500,
           disableOnInteraction: false,
+          pauseOnMouseEnter: true,
         }}
         navigation
         pagination={{ clickable: true }}
@@ -61,12 +69,17 @@ export default function Slider() {
             <img
               src={item.image_url}
               alt={item.title || "Banner"}
+              loading="lazy"
               style={{
                 width: "100%",
-                height: "auto",
+                height: "100%",
                 maxHeight: "500px",
                 objectFit: "cover",
-                borderRadius: "8px",
+                borderRadius: "10px",
+              }}
+              onError={(e) => {
+                e.target.src =
+                  "https://via.placeholder.com/1200x500?text=Banner";
               }}
             />
           </SwiperSlide>
@@ -74,4 +87,4 @@ export default function Slider() {
       </Swiper>
     </div>
   );
-}
+        }
