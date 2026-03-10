@@ -312,7 +312,7 @@ const addToCart = useCallback((product) => {
             />
             
             <Route 
-              path="/category/:slug" 
+              path="/category/:id" 
               element={
                 <CategoryDetail 
                   addToCart={addToCart} 
