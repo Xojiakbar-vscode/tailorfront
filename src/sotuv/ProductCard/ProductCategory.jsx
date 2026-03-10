@@ -407,7 +407,7 @@ const ProductCard = React.memo(({ product, avg, toggleFavorite, isFavorite, addT
       </Link>
 
       <div className="p-4 flex flex-col flex-grow">
-        <Link to={`/product/${product.id}`}>
+        <Link to={`/product/${product.slug}`}>
           <h3 className="text-[13px] sm:text-[14px] font-bold text-slate-800 line-clamp-2 hover:text-red-600 transition-colors leading-snug min-h-[2.4rem]">
             {product.name}
           </h3>
