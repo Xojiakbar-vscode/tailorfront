@@ -29,7 +29,6 @@ const ContactPage = lazy(() => import("./components/pages/ContactPage"));
 const FAQPage = lazy(() => import("./components/pages/FAQPage"));
 const DeliveryPage = lazy(() => import("./components/pages/DeliveryPage"));
 const PaymentPage = lazy(() => import("./components/pages/PaymentPage"));
-const WarrantyPage = lazy(() => import("./components/pages/WarrantyPage"));
 const ReturnPage = lazy(() => import("./components/pages/ReturnPage"));
 const PrivacyPage = lazy(() => import("./components/pages/PrivacyPage"));
 const NotFoundPage = lazy(() => import("./components/pages/NotFoundPage"));
@@ -375,11 +374,6 @@ const addToCart = useCallback((product) => {
             <Route 
               path="/return" 
               element={<ReturnPage />} 
-            />
-            
-            <Route 
-              path="/warranty" 
-              element={<WarrantyPage />} 
             />
             
             <Route 
