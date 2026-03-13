@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom';
 const AboutPage = () => {
   const stats = [
     { icon: FaUsers, value: '1000+', label: 'Mamnun mijozlar' },
-    { icon: FaRocket, value: '5000+', label: 'Mahsulotlar' },
+    { icon: FaRocket, value: '2000+', label: 'Mahsulotlar' },
     { icon: FaAward, value: '30+', label: 'Yillik tajriba' },
     { icon: FaHeart, value: '98%', label: 'Mijozlar tavsiyasi' }
   ];
