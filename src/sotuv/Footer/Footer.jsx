@@ -45,7 +45,6 @@ const Footer = () => {
       links: [
         { name: "FAQ", path: "/faq" },
         { name: "Qaytarish", path: "/return" },
-        { name: "Kafolat", path: "/warranty" },
         { name: "Bog'lanish", path: "/contact" }
       ]
     }
